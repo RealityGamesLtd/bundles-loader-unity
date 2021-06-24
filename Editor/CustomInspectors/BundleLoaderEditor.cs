@@ -37,6 +37,7 @@ namespace BundlesLoader.CustomInspectors
             List<string> elements = new List<string>();
             if(Names != null)
             {
+                elements.Add(string.Empty);
                 for (int i = 0; i < Names.Length; i++)
                 {
                     elements.Add(Names[i]);

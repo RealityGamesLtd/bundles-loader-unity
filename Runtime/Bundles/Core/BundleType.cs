@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Bundles.Utils;
+using UnityEngine;
 
 namespace BundlesLoader.Bundles.Core
 {
@@ -13,10 +14,17 @@ namespace BundlesLoader.Bundles.Core
 
         private string[] Initialze(RootObject names)
         {
-            var listNames = new List<string>();
-            var root = names;
-            HandleTree(listNames, names.RootName, root.Childs);
-            return listNames.ToArray();
+            if(names != null)
+            {
+                var listNames = new List<string>();
+                HandleTree(listNames, names.RootName, names.Childs);
+                return listNames.ToArray();
+            }
+            else
+            {
+                Debug.LogError("Names are null!");
+                return new string[] { string.Empty };
+            }
         }
 
         private void HandleTree(List<string> lst, string rootName, List<Child> childs)
