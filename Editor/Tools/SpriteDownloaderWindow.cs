@@ -19,7 +19,7 @@ namespace BundlesLoader.EditorHelpers.Tools
     public class SpriteDownloaderWindow : EditorWindow
     {
         private const string APP_NAME = "Drive API .NET Quickstart";
-        private const string PACKAGE_NAME = "bundles-loader";
+        private const string PACKAGE_NAME = "com.realitygames.bundlesloader";
 
         private const string TEXTURES_PATH = "Assets/Textures/spritesheets";
 
@@ -67,9 +67,8 @@ namespace BundlesLoader.EditorHelpers.Tools
         private void Awake()
         {
             UserCredential credential;
-            var currDir = Directory.GetCurrentDirectory();
             using (var stream =
-                new FileStream($"{currDir}/{PACKAGE_NAME}/credentials.json", FileMode.Open, FileAccess.Read))
+                new FileStream($"Packages/{PACKAGE_NAME}/credentials.json", FileMode.Open, FileAccess.Read))
             {
                 string credPath = Application.persistentDataPath + "/token.json";
                 credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
