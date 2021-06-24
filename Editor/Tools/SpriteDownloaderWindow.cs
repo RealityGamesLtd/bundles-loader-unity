@@ -65,11 +65,9 @@ namespace BundlesLoader.EditorHelpers.Tools
         private void Awake()
         {
             UserCredential credential;
-
-            var path = Application.dataPath + "/Editor/Tools/";
-
+            var currDir = Directory.GetCurrentDirectory();
             using (var stream =
-                new FileStream(path + "credentials.json", FileMode.Open, FileAccess.Read))
+                new FileStream(currDir + "/credentials.json", FileMode.Open, FileAccess.Read))
             {
                 string credPath = Application.persistentDataPath + "/token.json";
                 credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
