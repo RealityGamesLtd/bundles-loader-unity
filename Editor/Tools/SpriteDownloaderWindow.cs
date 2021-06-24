@@ -19,6 +19,8 @@ namespace BundlesLoader.EditorHelpers.Tools
     public class SpriteDownloaderWindow : EditorWindow
     {
         private const string APP_NAME = "Drive API .NET Quickstart";
+        private const string PACKAGE_NAME = "bundles-loader";
+
         private const string TEXTURES_PATH = "Assets/Textures/spritesheets";
 
         public class TexturePack
@@ -67,7 +69,7 @@ namespace BundlesLoader.EditorHelpers.Tools
             UserCredential credential;
             var currDir = Directory.GetCurrentDirectory();
             using (var stream =
-                new FileStream(currDir + "/credentials.json", FileMode.Open, FileAccess.Read))
+                new FileStream($"{currDir}/{PACKAGE_NAME}/credentials.json", FileMode.Open, FileAccess.Read))
             {
                 string credPath = Application.persistentDataPath + "/token.json";
                 credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
