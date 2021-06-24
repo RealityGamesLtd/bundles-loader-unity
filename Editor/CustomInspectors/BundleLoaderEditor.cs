@@ -45,12 +45,12 @@ namespace BundlesLoader.CustomInspectors
                 index = EditorGUILayout.Popup(index, elements.ToArray());
                 currentIndex.intValue = index;
 
-                if (index < Names.Length)
+                if (index < elements.Count)
                 {
-                    var elementAtIndex = Names[index];
+                    var elementAtIndex = elements[index];
                     if (elementAtIndex != null)
                     {
-                        var elem = Names[index];
+                        var elem = elements[index];
                         currentPath.stringValue = elem;
                     }
                 }
