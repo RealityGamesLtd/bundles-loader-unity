@@ -45,7 +45,6 @@ namespace BundlesLoader.CustomInspectors
             var split = currentPath.stringValue.Split('/');
             if(split.Length != 3)
             {
-                Debug.LogError($"Wrong format: {currentPath.stringValue}");
                 return;
             }
 
