@@ -8,14 +8,14 @@ namespace BundlesLoader.Bundles.Core
     public class Child
     {
         public string Name { get; set; }
-        public List<Child> Childs { get; set; }
+        public List<Child> Children { get; set; }
     }
 
     [JsonConverter(typeof(RootObjectConverter))]
     public class RootObject
     {
         public string RootName { get; set; }
-        public List<Child> Childs { get; set; }
+        public List<Child> Children { get; set; }
     }
 
     public class RootObjectConverter : JsonConverter
@@ -32,11 +32,11 @@ namespace BundlesLoader.Bundles.Core
             RootObject obj = new RootObject()
             {
                 RootName = root["RootName"].Value<string>(),
-                Childs = new List<Child>()
+                Children = new List<Child>()
             };
 
             var childs = root["Names"].Value<JArray>();
-            obj.Childs.AddRange(GetChildren(childs));
+            obj.Children.AddRange(GetChildren(childs));
             return obj;
         }
 
@@ -48,23 +48,23 @@ namespace BundlesLoader.Bundles.Core
             {
                 var name = token["Name"].Value<string>();
 
-                if(token["Childs"].Type != JTokenType.Null)
+                if(token["Children"].Type != JTokenType.Null)
                 {
-                    var chlds = token["Childs"].Value<JArray>();
+                    var chlds = token["Children"].Value<JArray>();
                     Child chld = new Child()
                     {
                         Name = name,
-                        Childs = token["Childs"] != null ? new List<Child>() : null
+                        Children = token["Children"] != null ? new List<Child>() : null
                     };
                     ret.Add(chld);
-                    chld.Childs.AddRange(GetChildren(chlds));
+                    chld.Children.AddRange(GetChildren(chlds));
                 }
                 else
                 {
                     Child chld = new Child()
                     {
                         Name = name,
-                        Childs = null
+                        Children = null
                     };
                     ret.Add(chld);
                 }

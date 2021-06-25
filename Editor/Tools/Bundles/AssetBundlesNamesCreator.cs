@@ -13,7 +13,7 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
         public class Child
         {
             public string Name { get; set; }
-            public List<Child> Childs { get; set; }
+            public List<Child> Children { get; set; }
         }
 
         public class RootObject
@@ -28,7 +28,7 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
 
             foreach(var obj in objects)
             {
-                Child basChild = new Child() { Name = obj.BundleName, Childs = new List<Child>() };
+                Child basChild = new Child() { Name = obj.BundleName, Children = new List<Child>() };
                 foreach(var slctObj in obj.SelectedObjects)
                 {
                     var names = GenerateNamesFromAsset(slctObj);
@@ -36,12 +36,12 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
                     var currChild = new Child()
                     {
                         Name = $"{slctObj.name.Replace("(Clone)", string.Empty)}{extension}",
-                        Childs = names != null ? new List<Child>() : null
+                        Children = names != null ? new List<Child>() : null
                     };
 
-                    basChild.Childs.Add(currChild);
+                    basChild.Children.Add(currChild);
                     if (names != null)
-                        currChild.Childs.AddRange(names.Select(x => new Child() { Name = x, Childs = null }));
+                        currChild.Children.AddRange(names.Select(x => new Child() { Name = x, Children = null }));
                 }
                 root.Names.Add(basChild);
             }

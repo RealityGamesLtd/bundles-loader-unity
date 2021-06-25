@@ -17,7 +17,7 @@ namespace BundlesLoader.Bundles.Core
             if(names != null)
             {
                 var listNames = new List<string>();
-                HandleTree(listNames, names.RootName, names.Childs);
+                HandleTree(listNames, names.RootName, names.Children);
                 return listNames.ToArray();
             }
             else
@@ -37,13 +37,13 @@ namespace BundlesLoader.Bundles.Core
 
         private void TraverseNames(List<string> lst, string name, Child chld)
         {
-            if(chld.Childs == null)
+            if(chld.Children == null)
             {
                 lst.Add(name);
             }
             else
             {
-                foreach (var child in chld.Childs)
+                foreach (var child in chld.Children)
                 {
                     TraverseNames(lst, $"{name}/{child.Name}", child);
                 }
