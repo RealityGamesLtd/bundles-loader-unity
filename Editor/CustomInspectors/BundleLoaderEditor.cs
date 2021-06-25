@@ -1,6 +1,7 @@
 ﻿using UnityEditor;
 using System.Collections.Generic;
 using BundlesLoader.Bundles.Loaders;
+using System.Linq;
 
 namespace BundlesLoader.CustomInspectors
 {
@@ -8,7 +9,6 @@ namespace BundlesLoader.CustomInspectors
     public abstract class BundleLoaderEditor : Editor
     {
         protected SerializedProperty currentPath;
-        protected SerializedProperty currentIndex;
 
         public int index;
         protected string[] Names { get; set; }
@@ -18,11 +18,10 @@ namespace BundlesLoader.CustomInspectors
         protected virtual void OnEnable()
         {
             var bundleType = serializedObject.FindProperty("bundleType");
-            currentIndex = bundleType.FindPropertyRelative("Index");
             currentPath = bundleType.FindPropertyRelative("FullName");
-            index = currentIndex.intValue;
-
             Names = SetNames();
+
+            index = Names.ToList().IndexOf(currentPath.stringValue);
         }
 
         public override void OnInspectorGUI()
@@ -37,14 +36,11 @@ namespace BundlesLoader.CustomInspectors
             List<string> elements = new List<string>();
             if(Names != null)
             {
-                elements.Add(string.Empty);
                 for (int i = 0; i < Names.Length; i++)
                 {
                     elements.Add(Names[i]);
                 }
                 index = EditorGUILayout.Popup(index, elements.ToArray());
-                currentIndex.intValue = index;
-
                 if (index < elements.Count)
                 {
                     var elementAtIndex = elements[index];

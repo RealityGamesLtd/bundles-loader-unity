@@ -10,7 +10,6 @@ namespace BundlesLoader.Bundles.Core
         public string[] Names => Initialze(AssetBundlesChecker.GetBundlesNames());
 
         public string FullName;
-        public int Index;
 
         private string[] Initialze(RootObject names)
         {

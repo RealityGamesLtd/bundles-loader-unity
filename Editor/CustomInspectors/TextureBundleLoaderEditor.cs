@@ -114,7 +114,11 @@ namespace BundlesLoader.CustomInspectors
                 return null;
             }
 
-            var strs = new List<string>();
+            var strs = new List<string>
+            {
+                string.Empty
+            };
+
             var names = obj.BundleType.Names;
             if (names != null)
             {
