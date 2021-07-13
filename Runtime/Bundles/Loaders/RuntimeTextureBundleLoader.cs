@@ -1,19 +1,12 @@
+using System;
 using UnityEngine;
 using UnityEngine.U2D;
-using UnityEngine.UI;
 
 namespace BundlesLoader.Bundles.Loaders
 {
-    [RequireComponent(typeof(Image))]
-    public class RuntimeTextureBundleLoader : BundleLoader
+    public abstract class RuntimeTextureBundleLoader : BundleLoader
     {
-        private Image image;
-
-        protected override void Awake()
-        {
-            base.Awake();
-            image = GetComponent<Image>();
-        }
+        protected abstract void SetSprite(Sprite sprite);
 
         public void LoadSprite(string bundleName, string assetName, string spriteInAtlas = "")
         {
@@ -60,8 +53,7 @@ namespace BundlesLoader.Bundles.Loaders
                     }
                 }
 
-
-                image.sprite = sprite;
+                SetSprite(sprite);
             }
             else
             {

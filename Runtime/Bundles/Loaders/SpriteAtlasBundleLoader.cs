@@ -1,19 +1,17 @@
+using System;
 using UnityEngine;
 using UnityEngine.U2D;
 using UnityEngine.UI;
 
 namespace BundlesLoader.Bundles.Loaders
 {
-    [RequireComponent(typeof(Image))]
-    public class SpriteAtlasBundleLoader : BundleLoader
+    public abstract class SpriteAtlasBundleLoader : BundleLoader
     {
-        private Image image;
+        public abstract void SetSprite(Sprite sprite);
 
         protected override void Awake()
         {
             base.Awake();
-            image = GetComponent<Image>();
-
             Initialize();
         }
 
@@ -55,7 +53,7 @@ namespace BundlesLoader.Bundles.Loaders
                     return;
                 }
 
-                image.sprite = sprite;
+                SetSprite(sprite);;
             }
             else
             {
@@ -64,5 +62,3 @@ namespace BundlesLoader.Bundles.Loaders
         }
     }
 }
-
-
