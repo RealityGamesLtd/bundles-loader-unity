@@ -8,8 +8,7 @@ using BundlesLoader.Bundles.Loaders;
 
 namespace BundlesLoader.CustomInspectors
 {
-    [CustomEditor(typeof(TextureBundleLoader))]
-    public class TextureBundleLoaderEditor : BundleLoaderEditor
+    public class BaseTextureBundleLoaderEditor<T> : BundleLoaderEditor where T: TextureBundleLoader
     {
         private Sprite currentSprite;
         private Sprite initSprite;
@@ -24,7 +23,7 @@ namespace BundlesLoader.CustomInspectors
 
         private Sprite GetCurrentSprite()
         {
-            var obj = currentPath.serializedObject.targetObject as SpriteAtlasBundleLoader;
+            var obj = currentPath.serializedObject.targetObject as T;
             if (obj != null)
             {
                 var img = obj.GetComponent<Image>();
@@ -94,7 +93,7 @@ namespace BundlesLoader.CustomInspectors
 
         private void SetSprite(Sprite value)
         {
-            var obj = currentPath.serializedObject.targetObject as SpriteAtlasBundleLoader;
+            var obj = currentPath.serializedObject.targetObject as T;
             if (obj != null)
             {
                 var img = obj.GetComponent<Image>();
@@ -107,10 +106,10 @@ namespace BundlesLoader.CustomInspectors
 
         protected override string[] SetNames()
         {
-            var obj = currentPath.serializedObject.targetObject as TextureBundleLoader;
+            var obj = currentPath.serializedObject.targetObject as T;
             if (obj == null)
             {
-                Debug.LogError($"No target object with specified type: {nameof(TextureBundleLoader)}");
+                Debug.LogError($"No target object with specified type: {nameof(T)}");
                 return null;
             }
 

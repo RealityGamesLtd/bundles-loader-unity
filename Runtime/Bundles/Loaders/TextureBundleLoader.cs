@@ -1,18 +1,16 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace BundlesLoader.Bundles.Loaders
 {
-    [RequireComponent(typeof(Image))]
-    public class TextureBundleLoader : BundleLoader
+    public abstract class TextureBundleLoader : BundleLoader
     {
-        private Image image;
+        public abstract void SetSprite(Sprite sprite);
 
         protected override void Awake()
         {
             base.Awake();
-            image = GetComponent<Image>();
-
             Initialize();
         }
 
@@ -47,7 +45,7 @@ namespace BundlesLoader.Bundles.Loaders
                     return;
                 }
 
-                image.sprite = Sprite.Create(texture, new Rect(0.0f, 0.0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100.0f);
+                SetSprite(Sprite.Create(texture, new Rect(0.0f, 0.0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100.0f));
             }
             else
             {
