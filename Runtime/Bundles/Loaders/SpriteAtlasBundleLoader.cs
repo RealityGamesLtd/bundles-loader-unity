@@ -1,10 +1,10 @@
-using System;
 using UnityEngine;
 using UnityEngine.U2D;
-using UnityEngine.UI;
+using Utils;
 
 namespace BundlesLoader.Bundles.Loaders
 {
+    [ExecuteAlways]
     public abstract class SpriteAtlasBundleLoader : BundleLoader
     {
         public abstract void SetSprite(Sprite sprite);
@@ -12,7 +12,35 @@ namespace BundlesLoader.Bundles.Loaders
         protected override void Awake()
         {
             base.Awake();
-            Initialize();
+            if (Application.isEditor)
+            {
+                var split = bundleType.FullName.Split('/');
+                if (split.Length != 4)
+                {
+                    return;
+                }
+
+                var spriteAtlas = AssetLoader.GetAsset<SpriteAtlas>(
+                    split[1],
+                    split[2]);
+
+                if (spriteAtlas == null)
+                {
+                    Debug.LogError($"No sprite atlas found: {bundleType.FullName}");
+                    return;
+                }
+
+                var sprite = spriteAtlas.GetSprite(split[3]);
+
+                if (sprite == null)
+                {
+                    Debug.LogError($"No sprite to show: {bundleType.FullName}");
+                    return;
+                }
+
+                SetSprite(sprite);
+            }
+            else Initialize();
         }
 
         private void Initialize()
@@ -53,7 +81,7 @@ namespace BundlesLoader.Bundles.Loaders
                     return;
                 }
 
-                SetSprite(sprite);;
+                SetSprite(sprite);
             }
             else
             {

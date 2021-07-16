@@ -1,9 +1,9 @@
-using System;
 using UnityEngine;
-using UnityEngine.UI;
+using Utils;
 
 namespace BundlesLoader.Bundles.Loaders
 {
+    [ExecuteAlways]
     public abstract class TextureBundleLoader : BundleLoader
     {
         public abstract void SetSprite(Sprite sprite);
@@ -11,7 +11,27 @@ namespace BundlesLoader.Bundles.Loaders
         protected override void Awake()
         {
             base.Awake();
-            Initialize();
+            if (Application.isEditor)
+            {
+                var split = bundleType.FullName.Split('/');
+                if (split.Length != 3)
+                {
+                    return;
+                }
+
+                var sprite = AssetLoader.GetAsset<Sprite>(
+                    split[1],
+                    split[2]);
+
+                if (sprite == null)
+                {
+                    Debug.LogError($"No sprite to show: {bundleType.FullName}");
+                    return;
+                }
+
+                SetSprite(sprite);
+            }
+            else Initialize();
         }
 
         private void Initialize()
