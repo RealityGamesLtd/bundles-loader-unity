@@ -1,3 +1,16 @@
 {
-	"name": "BundlesLoader"
+    "name": "BundlesLoader",
+    "rootNamespace": "",
+    "references": [
+        "GUID:eca3c0af5f8527d4ba109de417aa2d25"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

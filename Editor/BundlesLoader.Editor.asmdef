@@ -2,7 +2,8 @@
     "name": "BundlesLoader.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:dc402ad9943e3478d92f6ff1802b3c83"
+        "GUID:dc402ad9943e3478d92f6ff1802b3c83",
+        "GUID:eca3c0af5f8527d4ba109de417aa2d25"
     ],
     "includePlatforms": [
         "Editor"
