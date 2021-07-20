@@ -18,11 +18,6 @@ namespace BundlesLoader.EditorHelpers.Tools
 {
     public class SpriteDownloaderWindow : EditorWindow
     {
-        private const string APP_NAME = "Drive API .NET Quickstart";
-        private const string PACKAGE_NAME = "com.realitygames.bundlesloader";
-
-        private const string TEXTURES_PATH = "Assets/Textures/spritesheets";
-
         public class TexturePack
         {
             public TexturePack(Texture2D texture, string name, string parent)
@@ -39,19 +34,20 @@ namespace BundlesLoader.EditorHelpers.Tools
 
         private enum AssetType
         {
-            Single,
-            SinglePacked
+            Standalone,
+            Spritesheet
         }
+
+        private const string PACKAGE_NAME = "com.realitygames.bundlesloader";
+        private const string TEXTURES_PATH = "Assets/Textures/spritesheets";
 
         private readonly UnityEvent OnDownloaded = new UnityEvent();
         private readonly UnityEvent OnSaved = new UnityEvent();
         private readonly string[] SCOPES = { DriveService.Scope.DriveReadonly };
 
-        private AssetType currentType = AssetType.Single;
+        private AssetType currentType = AssetType.Spritesheet;
         private string driveFolderID;
-        private int rows, cols;
         private Vector2 scrollPos;
-        private TexturePack singleTex;
         private TexturePack[] multipleTexs;
         private DriveService driveService;
 
@@ -82,7 +78,7 @@ namespace BundlesLoader.EditorHelpers.Tools
             driveService = new DriveService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,
-                ApplicationName = APP_NAME,
+                ApplicationName = PACKAGE_NAME,
             });
         }
 
@@ -94,15 +90,8 @@ namespace BundlesLoader.EditorHelpers.Tools
             OnDownloaded.RemoveAllListeners();
             OnSaved.RemoveAllListeners();
 
-            switch (currentType)
-            {
-                case AssetType.SinglePacked:
-                    DrawSingle();
-                    break;
-                case AssetType.Single:
-                    DrawMultiple();
-                    break;
-            }
+            DrawGUI();
+            OnSaved.AddListener(async () => await SaveSpriteSheet(currentType));
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             if (GUILayout.Button("Download"))
@@ -128,14 +117,16 @@ namespace BundlesLoader.EditorHelpers.Tools
             Repaint();
         }
 
-        private void DrawMultiple()
+        private void DrawGUI()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             driveFolderID = EditorGUILayout.TextField("Folder ID: ", driveFolderID);
             EditorGUILayout.EndVertical();
 
-            OnDownloaded.AddListener(async () => multipleTexs = await DownloadSpriteSheet());
-            OnSaved.AddListener(async () => await SaveSpriteSheet(multipleTexs));
+            OnDownloaded.AddListener(async () =>
+            {
+                multipleTexs = await DownloadSpriteSheet();
+            });
 
             if (multipleTexs != null)
             {
@@ -150,27 +141,6 @@ namespace BundlesLoader.EditorHelpers.Tools
                 }
                 EditorGUILayout.EndScrollView();
                 EditorGUILayout.EndHorizontal();
-            }
-        }
-
-        private void DrawSingle()
-        {
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-
-            driveFolderID = EditorGUILayout.TextField("Folder ID: ", driveFolderID);
-
-            rows = EditorGUILayout.IntSlider("Rows: ", rows, 1, 8);
-            cols = EditorGUILayout.IntSlider("Columns: ", cols, 1, 8);
-
-            EditorGUILayout.EndVertical();
-
-            OnDownloaded.AddListener(async () => singleTex = await DownloadSingleSpritesToSpriteSheet());
-            OnSaved.AddListener(async () => await SaveSpriteSheet(singleTex));
-
-            if (singleTex != null)
-            {
-                EditorGUILayout.LabelField(singleTex.Name, EditorStyles.boldLabel);
-                GUILayout.Box(singleTex.Texture, GUILayout.Width(392), GUILayout.Height(250));
             }
         }
 
@@ -249,134 +219,75 @@ namespace BundlesLoader.EditorHelpers.Tools
             });
         }
 
-        private async Task<TexturePack> DownloadSingleSpritesToSpriteSheet()
+        private async Task SaveSpriteSheet(AssetType type)
         {
-            var folderName = driveService.Files.Get(driveFolderID).Execute().Name;
-
-            var listRequest = driveService.Files.List();
-            listRequest.Q = $"('{driveFolderID}' in parents)";
-            var files = listRequest.Execute().Files.ToArray();
-
-            if(files.Length <= 0)
+            if (multipleTexs == null)
             {
                 EditorUtility.DisplayDialog("Sprite Downloader",
-                    $"No files in this directory: {folderName}, no spritesheet created!", "Ok");
-
-                Debug.LogError($"No files in this directory: {folderName}, no spritesheet created!");
-                return null;
-            }
-
-            var tasks = files.Select(async x =>
-            {
-                var task = driveService.Files.Get(x.Id);
-                using MemoryStream ms = new MemoryStream();
-                await task.DownloadAsync(ms);
-                return (ms.GetBuffer(), x.Name);
-            });
-
-            (byte[] Bytes, string Name)[] resp;
-
-            try
-            {
-                resp = await Task.WhenAll(tasks);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e.Message);
-                return null;
-            }
-
-            if (resp == null)
-            {
-                Debug.LogError("Bytes are null!");
-                return null;
-            }
-
-            Texture2D[] textures = new Texture2D[resp.Length];
-            for (int i = 0; i < resp.Length; ++i)
-            {
-                textures[i] = new Texture2D(1, 1);
-                textures[i].LoadImage(resp[i].Bytes);
-            }
-
-            int widthOffset = textures.Max(x => x.width);
-            int heightOffset = textures.Max(x => x.height);
-            int height = rows * heightOffset;
-            int width = cols * widthOffset;
-
-            var background = new Color32[height * width];
-            for(int i = 0; i < background.Length; ++i)
-            {
-                background[i] = new Color32(0, 0, 0, 0);
-            }
-
-            var tex = new Texture2D(width, height);
-            tex.SetPixels32(background);
-
-            int z = 0;
-            for(int i = rows - 1; i >= 0; --i)
-            {
-                for(int j = 0; j < cols; ++j)
-                {
-                    if(z < textures.Length)
-                    {
-                        tex.SetPixels32(j * widthOffset, i * heightOffset, textures[z].width, textures[z].height, textures[z].GetPixels32());
-                        z++;
-                    }
-                }
-            }
-
-            tex.Apply();
-            return new TexturePack(tex, $"{folderName}.png", string.Empty);
-        }
-
-        private async Task SaveSpriteSheet(params TexturePack[] texs)
-        {
-            if (texs == null)
-            {
-                EditorUtility.DisplayDialog("Sprite Downloader",
-                    "Texture is null", "Ok");
-                Debug.LogError("Texture is null");
+                    "There are no textures to be saved", "Ok");
+                Debug.LogError("Textures are null");
                 return;
             }
 
-            var paths = new string[texs.Length];
+            var paths = new string[multipleTexs.Length];
 
-            for (int i = 0; i < texs.Length; ++i)
+            for (int i = 0; i < multipleTexs.Length; ++i)
             {
-                byte[] bytes = texs[i].Texture.EncodeToPNG();
-                if (!Directory.Exists($"{TEXTURES_PATH}/{texs[i].Parent}"))
+                byte[] bytes = multipleTexs[i].Texture.EncodeToPNG();
+                if (!Directory.Exists($"{TEXTURES_PATH}/{multipleTexs[i].Parent}"))
                 {
-                    Debug.LogWarning($"{TEXTURES_PATH}/{texs[i].Parent} directory doesn't exist! Creating a new one!");
-                    Directory.CreateDirectory($"{TEXTURES_PATH}/{texs[i].Parent}");
+                    Debug.LogWarning($"{TEXTURES_PATH}/{multipleTexs[i].Parent} directory doesn't exist! Creating a new one!");
+                    Directory.CreateDirectory($"{TEXTURES_PATH}/{multipleTexs[i].Parent}");
                 }
 
-                var path = $"{TEXTURES_PATH}/{texs[i].Parent}/{texs[i].Name}";
+                var path = $"{TEXTURES_PATH}/{multipleTexs[i].Parent}/{multipleTexs[i].Name}";
+                string metaContent = string.Empty;
+                if (File.Exists($"{path}.meta"))
+                {
+                    metaContent = File.ReadAllText($"{path}.meta");
+                    AssetDatabase.DeleteAsset(path);
+                }
+
                 using (FileStream SourceStream = File.Open(path, FileMode.Create))
                 {
                     SourceStream.Seek(0, SeekOrigin.End);
                     await SourceStream.WriteAsync(bytes, 0, bytes.Length);
                     SourceStream.Close();
                 }
-                path = $"{TEXTURES_PATH}/{texs[i].Parent}/{texs[i].Name}";
+                WriteMetaFile(path, metaContent);
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
                 paths[i] = path;
             }
 
-            await Task.Delay(200);
+            if (type == AssetType.Spritesheet)
+            {
+                var dict = multipleTexs.GroupBy(x => x.Parent).ToDictionary(k => k.Key, v => v.Select(x => x.Name).ToArray());
+                SaveSpriteAtlas(dict);
+            }
             AssetDatabase.SaveAssets();
+        }
 
-            var dict = texs.GroupBy(x => x.Parent).ToDictionary(k => k.Key, v => v.Select(x => x.Name).ToArray());
-            SaveSpriteAtlas(dict);
+        private void WriteMetaFile(string path, string metaContent)
+        {
+            if (metaContent != string.Empty)
+            {
+                FileInfo fi = new FileInfo($"{path}.meta");
+                using TextWriter txtWriter = new StreamWriter(fi.Open(FileMode.Create));
+                txtWriter.Write(metaContent);
+            }
         }
 
         private void SaveSpriteAtlas(Dictionary<string, string[]> textures)
         {
             foreach (var pair in textures)
             {
+                var path = $"{TEXTURES_PATH}/{pair.Key}/{pair.Key}.spriteatlas";
+
                 SpriteAtlas sa = new SpriteAtlas();
                 sa.SetPackingSettings(new SpriteAtlasPackingSettings() { enableTightPacking = false, enableRotation = false });
-                AssetDatabase.CreateAsset(sa, $"{TEXTURES_PATH}/{pair.Key}/{pair.Key}.spriteatlas");
+
+                AssetDatabase.DeleteAsset(path);
+                AssetDatabase.CreateAsset(sa, path);
                 Sprite[] sprites = new Sprite[pair.Value.Length];
 
                 for(int i = 0; i < pair.Value.Length; ++i)
@@ -387,7 +298,6 @@ namespace BundlesLoader.EditorHelpers.Tools
                 if (sprites != null)
                     SpriteAtlasExtensions.Add(sa, sprites);
             }
-            AssetDatabase.SaveAssets();
         }
     }
 }
