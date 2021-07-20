@@ -59,13 +59,17 @@ namespace BundlesLoader.Bundles.Loaders
                 }
 
                 var texture = asset.LoadAsset<Texture2D>(split[2]);
-                if (texture == null)
+                var sprite = asset.LoadAsset<Sprite>(split[2]);
+                if (texture == null && sprite == null)
                 {
                     Debug.LogError($"No asset in bundle with name:{split[2]}");
                     return;
                 }
 
-                SetSprite(Sprite.Create(texture, new Rect(0.0f, 0.0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100.0f));
+                if (texture != null)
+                    SetSprite(Sprite.Create(texture, new Rect(0.0f, 0.0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100.0f));
+                else if (sprite != null)
+                    SetSprite(sprite);
             }
             else
             {
