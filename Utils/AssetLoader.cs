@@ -1,7 +1,9 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace Utils
@@ -13,6 +15,7 @@ namespace Utils
         public static T GetAsset<T>(string assetBundleName, string assetName)
             where T : Object
         {
+#if UNITY_EDITOR
             if (!Directory.Exists(ASSET_BUNDLE_PATH))
             {
                 Debug.LogError("No directory found!");
@@ -35,8 +38,9 @@ namespace Utils
             }
 
             return AssetDatabase.LoadAssetAtPath<T>(assetPath);
+#else 
+            return null;
+#endif
         }
     }
 }
-
-

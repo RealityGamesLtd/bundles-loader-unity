@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [1.0.3] - 2020-07-23
+### Fix
+- failing cloud builds due to "'AssetDatabase' does not exist in the current context" compilation error
+- bug with loading sprites instead of textures from TextureBundleLoader component
+### Added
+- Standalone mode which saves sprites without packing them inside Sprite Atlas
+- Functionality to restore .meta import options of sprites after their redownloading process
+
 ## [1.0.2] - 2020-07-16
 ### Added
 - In edit mode in Unity Editor sprites and textures that have bundle loaders with specified sprite asset from a bundle will set their respective renderers with these sprites to enhance visualization while working with prefabs
