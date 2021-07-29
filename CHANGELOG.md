@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2020-07-28
+- Added gif support, fixed handling different extensions files
+
 ## [1.0.3] - 2020-07-23
 ### Fix
 - failing cloud builds due to "'AssetDatabase' does not exist in the current context" compilation error
