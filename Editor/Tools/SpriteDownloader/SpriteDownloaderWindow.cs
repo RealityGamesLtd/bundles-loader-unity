@@ -13,25 +13,19 @@ using System.Threading;
 using System.Collections.Generic;
 using UnityEngine.U2D;
 using UnityEditor.U2D;
+using BundlesLoader.EditorHelpers.Tools.SpriteDownloader.Packs;
+using System.Text.RegularExpressions;
 
-namespace BundlesLoader.EditorHelpers.Tools
+namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader
 {
-    public class SpriteDownloaderWindow : EditorWindow
+    public static class AssetsRegexs
     {
-        public class TexturePack
-        {
-            public TexturePack(Texture2D texture, string name, string parent)
-            {
-                Texture = texture;
-                Name = name;
-                Parent = parent;
-            }
+        public const string TEXTURE_REGEX = "[^\\s]+(.*?)\\.([jJ][pP][gG]|[jJ][pP][eE][gG]|[pP][nN][gG])$";
+        public const string BYTE_REGEX = "[^\\s]+(.*?)\\.([gG][iI][fF])$";
+    }
 
-            public Texture2D Texture { get; private set; }
-            public string Name { get; private set; }
-            public string Parent { get; private set; }
-        }
-
+    public partial class SpriteDownloaderWindow : EditorWindow
+    {
         private enum AssetType
         {
             Standalone,
@@ -48,7 +42,7 @@ namespace BundlesLoader.EditorHelpers.Tools
         private AssetType currentType = AssetType.Spritesheet;
         private string driveFolderID;
         private Vector2 scrollPos;
-        private TexturePack[] multipleTexs;
+        private Pack[] packs;
         private DriveService driveService;
 
         [MenuItem("Window/Sprite Downloader")]
@@ -125,18 +119,21 @@ namespace BundlesLoader.EditorHelpers.Tools
 
             OnDownloaded.AddListener(async () =>
             {
-                multipleTexs = await DownloadSpriteSheet();
+                packs = await DownloadSpriteSheet();
             });
 
-            if (multipleTexs != null)
+            if (packs != null)
             {
                 EditorGUILayout.LabelField("Overview", EditorStyles.boldLabel);
                 EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
                 scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.Width(392), GUILayout.Height(295));
-                for(int i = 0; i < multipleTexs.Length; ++i)
+                for(int i = 0; i < packs.Length; ++i)
                 {
-                    EditorGUILayout.LabelField($"{multipleTexs[i].Parent}/{multipleTexs[i].Name}", EditorStyles.miniBoldLabel);
-                    GUILayout.Box(multipleTexs[i].Texture, GUILayout.Width(370), GUILayout.Height(250));
+                    EditorGUILayout.LabelField($"{packs[i].Parent}/{packs[i].Name}", EditorStyles.miniBoldLabel);
+                    if(packs[i] is TexturePack texPack)
+                    {
+                        GUILayout.Box(texPack.Texture, GUILayout.Width(370), GUILayout.Height(250));
+                    }
                     EditorGUILayout.Space(10);
                 }
                 EditorGUILayout.EndScrollView();
@@ -144,7 +141,7 @@ namespace BundlesLoader.EditorHelpers.Tools
             }
         }
 
-        private async Task<TexturePack[]> DownloadSpriteSheet()
+        private async Task<Pack[]> DownloadSpriteSheet()
         {
             var parentFolder = driveService.Files.Get(driveFolderID).Execute();
             var folderName = parentFolder.Name;
@@ -188,15 +185,31 @@ namespace BundlesLoader.EditorHelpers.Tools
                 return null;
             }
 
-            TexturePack[] textures = new TexturePack[resp.Length];
+            Pack[] lclPcks = new Pack[resp.Length];
             for (int i = 0; i < resp.Length; ++i)
             {
-                var tex = new Texture2D(1, 1);
-                tex.LoadImage(resp[i].Bytes);
-
-                textures[i] = new TexturePack(tex, resp[i].Name, resp[i].FolderName);
+                ParsePacks(resp[i], out lclPcks[i]);
             }
-            return textures;
+            return lclPcks;
+        }
+
+        private void ParsePacks((byte[] Bytes, string FolderName, string Name) resp, out Pack lclPcks)
+        {
+            if (Regex.Match(resp.Name, AssetsRegexs.TEXTURE_REGEX).Success)
+            {
+                var tex = new Texture2D(1, 1);
+                tex.LoadImage(resp.Bytes);
+                lclPcks = new TexturePack(tex, resp.Name, resp.FolderName);
+            }
+            else if (Regex.Match(resp.Name, AssetsRegexs.BYTE_REGEX).Success)
+            {
+                lclPcks = new BytePack(resp.Bytes, resp.Name, resp.FolderName);
+            }
+            else
+            {
+                lclPcks = null;
+                //TODO: More regexes in the future
+            }
         }
 
         private IEnumerable<Task<(byte[], string FolderName, string Name)>> GetFilesFromFolder(
@@ -221,7 +234,7 @@ namespace BundlesLoader.EditorHelpers.Tools
 
         private async Task SaveSpriteSheet(AssetType type)
         {
-            if (multipleTexs == null)
+            if (packs == null)
             {
                 EditorUtility.DisplayDialog("Sprite Downloader",
                     "There are no textures to be saved", "Ok");
@@ -229,18 +242,23 @@ namespace BundlesLoader.EditorHelpers.Tools
                 return;
             }
 
-            var paths = new string[multipleTexs.Length];
+            var paths = new string[packs.Length];
 
-            for (int i = 0; i < multipleTexs.Length; ++i)
+            for (int i = 0; i < packs.Length; ++i)
             {
-                byte[] bytes = multipleTexs[i].Texture.EncodeToPNG();
-                if (!Directory.Exists($"{TEXTURES_PATH}/{multipleTexs[i].Parent}"))
+                byte[] bytes = packs[i].Bytes;
+                if (!Directory.Exists($"{TEXTURES_PATH}/{packs[i].Parent}"))
                 {
-                    Debug.LogWarning($"{TEXTURES_PATH}/{multipleTexs[i].Parent} directory doesn't exist! Creating a new one!");
-                    Directory.CreateDirectory($"{TEXTURES_PATH}/{multipleTexs[i].Parent}");
+                    Debug.LogWarning($"{TEXTURES_PATH}/{packs[i].Parent} directory doesn't exist! Creating a new one!");
+                    Directory.CreateDirectory($"{TEXTURES_PATH}/{packs[i].Parent}");
                 }
 
-                var path = $"{TEXTURES_PATH}/{multipleTexs[i].Parent}/{multipleTexs[i].Name}";
+                if(Regex.Match(packs[i].Name, AssetsRegexs.BYTE_REGEX).Success)
+                {
+                    packs[i].Name = $"{Path.GetFileName(packs[i].Name)}.bytes";
+                }
+
+                var path = $"{TEXTURES_PATH}/{packs[i].Parent}/{packs[i].Name}";
                 string metaContent = string.Empty;
                 if (File.Exists($"{path}.meta"))
                 {
@@ -261,7 +279,7 @@ namespace BundlesLoader.EditorHelpers.Tools
 
             if (type == AssetType.Spritesheet)
             {
-                var dict = multipleTexs.GroupBy(x => x.Parent).ToDictionary(k => k.Key, v => v.Select(x => x.Name).ToArray());
+                var dict = packs.GroupBy(x => x.Parent).ToDictionary(k => k.Key, v => v.Select(x => x.Name).ToArray());
                 SaveSpriteAtlas(dict);
             }
             AssetDatabase.SaveAssets();
