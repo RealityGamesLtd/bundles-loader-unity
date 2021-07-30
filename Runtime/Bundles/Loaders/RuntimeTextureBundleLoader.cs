@@ -45,7 +45,7 @@ namespace BundlesLoader.Bundles.Loaders
                 }
                 else
                 {
-                    sprite = asset.LoadAsset<Sprite>(spriteInAtlas);
+                    sprite = asset.LoadAsset<Sprite>(assetName);
                     if (sprite == null)
                     {
                         Debug.LogError($"No sprite in bundle with name: {assetName}");
