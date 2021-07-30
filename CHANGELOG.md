@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2020-07-30
+### Fix
+- fixed `RuntimeTextureBundleLoader` single texture loading due to wrong argument using as texture name to load.
+
 ## [1.1.0] - 2020-07-28
 - Added gif support, fixed handling different extensions files
 
