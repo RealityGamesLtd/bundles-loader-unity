@@ -302,7 +302,7 @@ namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader
                 var path = $"{TEXTURES_PATH}/{pair.Key}/{pair.Key}.spriteatlas";
 
                 SpriteAtlas sa = new SpriteAtlas();
-                sa.SetPackingSettings(new SpriteAtlasPackingSettings() { enableTightPacking = false, enableRotation = false });
+                sa.SetPackingSettings(new SpriteAtlasPackingSettings() { enableTightPacking = false, enableRotation = false, padding = 4 });
 
                 AssetDatabase.DeleteAsset(path);
                 AssetDatabase.CreateAsset(sa, path);
