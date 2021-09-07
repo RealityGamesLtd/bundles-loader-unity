@@ -9,13 +9,6 @@ namespace BundlesLoader.Bundles.Loaders
         [SerializeField] protected BundleType bundleType = new BundleType();
 
         public BundleType BundleType { get => bundleType; }
-
-        protected IAssetsService assetsService;
-
-        protected virtual void Awake()
-        {
-            assetsService = AssetsServiceLoader.AssetsService;
-        }
     }
 }
 

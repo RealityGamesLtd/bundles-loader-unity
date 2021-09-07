@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace BundlesLoader.Bundles.Core
+namespace Bundles.Utils
 {
     public class Child
     {

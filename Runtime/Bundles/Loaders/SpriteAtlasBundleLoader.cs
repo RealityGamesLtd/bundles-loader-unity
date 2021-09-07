@@ -9,14 +9,20 @@ namespace BundlesLoader.Bundles.Loaders
     {
         public abstract void SetSprite(Sprite sprite);
 
-        protected override void Awake()
+        protected void Awake()
         {
-            base.Awake();
             if (Application.isEditor)
             {
-                var split = bundleType.FullName.Split('/');
+                if (bundleType == null || bundleType.FullName == null)
+                {
+                    Debug.LogError("Bundle type not loaded!");
+                    return;
+                }
+
+                var split = bundleType.FullName?.Split('/');
                 if (split.Length != 4)
                 {
+                    Debug.LogError($"Wrong format: {bundleType.FullName} !");
                     return;
                 }
 
@@ -45,13 +51,26 @@ namespace BundlesLoader.Bundles.Loaders
 
         private void Initialize()
         {
+            var assetsService = AssetsServiceLoader.AssetsService;
+            if (assetsService == null)
+            {
+                Debug.LogError("Asset Service is not loaded!");
+                return;
+            }
+
             if (assetsService.Bundles == null)
             {
                 Debug.LogError("Asset Bundles not loaded!");
                 return;
             }
 
-            var split = bundleType.FullName.Split('/');
+            if (bundleType == null || bundleType.FullName == null)
+            {
+                Debug.LogError("Bundle type not loaded!");
+                return;
+            }
+
+            var split = bundleType.FullName?.Split('/');
             if (split.Length != 4)
             {
                 Debug.LogError($"Wrong format: {bundleType.FullName} !");

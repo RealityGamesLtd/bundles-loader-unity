@@ -10,9 +10,22 @@ namespace BundlesLoader.Bundles.Loaders
 
         public void LoadSprite(string bundleName, string assetName, string spriteInAtlas = "")
         {
+            var assetsService = AssetsServiceLoader.AssetsService;
+            if (assetsService == null)
+            {
+                Debug.LogError("Asset Service is not loaded!");
+                return;
+            }
+
             if (assetsService.Bundles == null)
             {
                 Debug.LogError("Asset Bundles not loaded!");
+                return;
+            }
+
+            if (bundleType == null || bundleType.FullName == null)
+            {
+                Debug.LogError("Bundle type not loaded!");
                 return;
             }
 
@@ -25,8 +38,7 @@ namespace BundlesLoader.Bundles.Loaders
                     return;
                 }
 
-                Sprite sprite = null;
-
+                Sprite sprite;
                 if (spriteInAtlas != string.Empty)
                 {
                     var atlas = asset.LoadAsset<SpriteAtlas>(assetName);

@@ -1,46 +1,20 @@
+using BundlesLoader.Gif;
 using UnityEngine;
-using Utils;
 
 namespace BundlesLoader.Bundles.Loaders
 {
-    [ExecuteAlways]
-    public abstract class TextureBundleLoader : BundleLoader
+    [RequireComponent(typeof(GifSprite))]
+    public class GifSpriteBundleLoader : BundleLoader
     {
-        public abstract void SetSprite(Sprite sprite);
+        private GifSprite gifSprite;
 
         protected void Awake()
         {
-            if (Application.isEditor)
-            {
-                if(bundleType == null || bundleType.FullName == null)
-                {
-                    Debug.LogError("Bundle type not loaded!");
-                    return;
-                }
-
-                var split = bundleType.FullName.Split('/');
-                if (split.Length != 3)
-                {
-                    Debug.LogError($"Wrong format: {bundleType.FullName} !");
-                    return;
-                }
-
-                var sprite = AssetLoader.GetAsset<Sprite>(
-                    split[1],
-                    split[2]);
-
-                if (sprite == null)
-                {
-                    Debug.LogError($"No sprite to show: {bundleType.FullName}");
-                    return;
-                }
-
-                SetSprite(sprite);
-            }
-            else Initialize();
+            gifSprite = GetComponent<GifSprite>();
+            Initialize();
         }
 
-        private void Initialize()
+        public void Initialize()
         {
             var assetsService = AssetsServiceLoader.AssetsService;
             if (assetsService == null)
@@ -77,18 +51,14 @@ namespace BundlesLoader.Bundles.Loaders
                     return;
                 }
 
-                var texture = asset.LoadAsset<Texture2D>(split[2]);
-                var sprite = asset.LoadAsset<Sprite>(split[2]);
-                if (texture == null && sprite == null)
+                var gifAsset = asset.LoadAsset<TextAsset>(split[2]);
+                if (gifAsset == null)
                 {
                     Debug.LogError($"No asset in bundle with name:{split[2]}");
                     return;
                 }
 
-                if (texture != null)
-                    SetSprite(Sprite.Create(texture, new Rect(0.0f, 0.0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100.0f));
-                else if (sprite != null)
-                    SetSprite(sprite);
+                gifSprite.Load(gifAsset.bytes);
             }
             else
             {
@@ -97,5 +67,3 @@ namespace BundlesLoader.Bundles.Loaders
         }
     }
 }
-
-
