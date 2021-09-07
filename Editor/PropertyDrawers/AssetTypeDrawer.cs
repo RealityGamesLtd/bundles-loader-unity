@@ -1,37 +1,42 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using Bundles.Utils;
 using BundlesLoader.Bundles.Core;
 using UnityEditor;
 using UnityEngine;
 
-[CustomPropertyDrawer(typeof(AssetType))]
-public class AssetTypeDrawer : PropertyDrawer
+namespace BundlesLoader.PropertyDrawers
 {
-    int index = 0;
-
-    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    [CustomPropertyDrawer(typeof(AssetType))]
+    public class AssetTypeDrawer : PropertyDrawer
     {
-        var names = new List<string>();
-        var targetObject = property.serializedObject.targetObject;
-        var targetObjectClassType = targetObject.GetType();
+        int index = 0;
+        List<string> names = new List<string>();
 
-        var bindingFlags = BindingFlags.Instance |
-            BindingFlags.Static |
-            BindingFlags.NonPublic |
-            BindingFlags.Public;
-        var field = targetObjectClassType.GetField(property.propertyPath, bindingFlags);
-            if (field != null)
+        public AssetTypeDrawer() : base()
         {
-            if (field.GetValue(targetObject) is AssetType value)
-            {
-                for (int x = 0; x < value.Names.Length; x++)
-                {
-                    names.Add(value.Names[x]);
-                }
-                index = EditorGUI.Popup(position, index, names.ToArray());
+            names = AssetTreeNames.Initialize(AssetBundlesChecker.GetBundlesNames()).ToList();
+        }
 
-                if(index < names.Count)
-                    value.FullName = names[index];
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            var targetObject = property.serializedObject.targetObject;
+            var targetObjectClassType = targetObject.GetType();
+
+            var bindingFlags = BindingFlags.Instance |
+                BindingFlags.Static |
+                BindingFlags.NonPublic |
+                BindingFlags.Public;
+            var field = targetObjectClassType.GetField(property.propertyPath, bindingFlags);
+            if (field != null && names.Count > 0)
+            {
+                if (field.GetValue(targetObject) is AssetType value)
+                {
+                    index = EditorGUI.Popup(position, property.propertyPath, index, names.ToArray());
+                    if (index < names.Count)
+                        value.Name = names[index].Split('/').Last();
+                }
             }
         }
     }
