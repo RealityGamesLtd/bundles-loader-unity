@@ -1,15 +1,14 @@
 using System.Collections.Generic;
 using ThreeDISevenZeroR.UnityGifDecoder;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace BundlesLoader.Gif
 {
-    [RequireComponent(typeof(RawImage))]
-    public class GifImage : MonoBehaviour
+    [RequireComponent(typeof(SpriteRenderer))]
+    public class GifSprite : MonoBehaviour
     {
-        private RawImage img;
-        private readonly List<Texture> frames = new List<Texture>();
+        private SpriteRenderer img;
+        private readonly List<Sprite> frames = new List<Sprite>();
         private readonly List<float> frameDelays = new List<float>();
         private bool isPlaying;
         private bool isOneShot;
@@ -18,25 +17,25 @@ namespace BundlesLoader.Gif
 
         private void Awake()
         {
-            img = GetComponent<RawImage>();
+            img = GetComponent<SpriteRenderer>();
         }
 
         private void Update()
         {
             if (isPlaying)
             {
-                if (frames.Count > 0 && frameDelays.Count > 0)
+                if(frames.Count > 0 && frameDelays.Count > 0)
                 {
                     var frame = frames[index];
                     var delay = frameDelays[index];
                     timer += Time.deltaTime;
                     if (timer > delay)
                     {
-                        img.texture = frame;
+                        img.sprite = frame;
                         index += 1;
                         index %= frames.Count;
 
-                        if (isOneShot && index == frames.Count - 1)
+                        if(isOneShot && index == frames.Count - 1)
                         {
                             isPlaying = false;
                         }
@@ -63,7 +62,10 @@ namespace BundlesLoader.Gif
                         frame.SetPixels32(image.colors);
                         frame.Apply();
 
-                        frames.Add(frame);
+                        frames.Add(Sprite.Create(frame,
+                            new Rect(0.0f, 0.0f, frame.width, frame.height),
+                            new Vector2(0.5f, 0.5f), 100.0f, 0,
+                            SpriteMeshType.FullRect));
                         frameDelays.Add(image.SafeDelaySeconds);
                         break;
 

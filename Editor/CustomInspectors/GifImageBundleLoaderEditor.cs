@@ -8,7 +8,7 @@ using Utils;
 namespace BundlesLoader.CustomInspectors
 {
     [CustomEditor(typeof(GifBundleLoader))]
-    public class GifBundleLoaderEditor : BundleLoaderEditor
+    public class GifImageBundleLoaderEditor : BundleLoaderEditor
     {
         private readonly List<string> EXTENSIONS = new List<string>() { ".bytes" };
 
