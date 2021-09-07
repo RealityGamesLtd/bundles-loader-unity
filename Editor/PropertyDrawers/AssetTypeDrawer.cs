@@ -11,8 +11,8 @@ namespace BundlesLoader.PropertyDrawers
     [CustomPropertyDrawer(typeof(AssetType))]
     public class AssetTypeDrawer : PropertyDrawer
     {
-        int index = 0;
-        List<string> names = new List<string>();
+        private int index = 0;
+        private List<string> names = new List<string>();
 
         public AssetTypeDrawer() : base()
         {
@@ -33,11 +33,20 @@ namespace BundlesLoader.PropertyDrawers
             {
                 if (field.GetValue(targetObject) is AssetType value)
                 {
+                    Set(value.FullName);
                     index = EditorGUI.Popup(position, property.propertyPath, index, names.ToArray());
-                    if (index < names.Count)
-                        value.Name = names[index].Split('/').Last();
+                    if (index != -1  && index < names.Count && names[index] != value.FullName)
+                    {
+                        value.FullName = names[index];
+                        EditorUtility.SetDirty(targetObject);
+                    }
                 }
             }
+        }
+
+        private void Set(string name)
+        {
+            index = names.IndexOf(name);
         }
     }
 }

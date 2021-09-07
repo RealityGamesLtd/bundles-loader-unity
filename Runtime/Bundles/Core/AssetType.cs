@@ -1,5 +1,4 @@
-﻿using Bundles.Utils;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace BundlesLoader.Bundles.Core
 {
@@ -7,6 +6,6 @@ namespace BundlesLoader.Bundles.Core
     public class AssetType
     {
         [HideInInspector]
-        public string Name;
+        public string FullName;
     }
 }
