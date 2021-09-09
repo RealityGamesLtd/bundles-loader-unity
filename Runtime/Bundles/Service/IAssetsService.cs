@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,5 +9,6 @@ namespace BundlesLoader.Service
     {
         Dictionary<string, Bundle> Bundles { get; }
         Task<Dictionary<string, Bundle>> GetAssets(CancellationToken ct);
+        Action<float> OnProgressChanged { get; set; }
     }
 }
