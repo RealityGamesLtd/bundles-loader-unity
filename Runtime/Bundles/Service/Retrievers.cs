@@ -38,7 +38,13 @@ namespace BundlesLoader.Service
             var bundlesTask = files.Select(x =>
             {
                 return RetrieveBundle(x);
-            }).ToArray();
+            }).Where(x => x != null).ToArray();
+
+            if (bundlesTask == null)
+            {
+                Debug.LogError("Tasks for  bundles are null!");
+                return datas;
+            }
 
             foreach (var task in bundlesTask)
             {
@@ -109,12 +115,24 @@ namespace BundlesLoader.Service
             (CancellationToken ct)
         {
             Dictionary<string, Bundle> datas = new Dictionary<string, Bundle>();
+            if (Versions == null || Versions.Count == 0)
+            {
+                Debug.LogError("No versions!");
+                return datas;
+            }
+
             var tasks = Versions.Select((x) =>
             {
                 return RetrieveBundle(x.Key, x.Value);
-            }).ToArray();
+            }).Where(x => x != null).ToArray();
 
             int count = 0;
+
+            if (tasks == null)
+            {
+                Debug.LogError("Tasks for  bundles are null!");
+                return datas;
+            }
 
             foreach (var task in tasks)
             {
