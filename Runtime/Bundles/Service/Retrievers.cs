@@ -94,7 +94,7 @@ namespace BundlesLoader.Service
                 var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, listOfCachedVersions.Last());
                 uwr.SendWebRequest();
 
-                while (!uwr.isDone || !ct.IsCancellationRequested)
+                while (!uwr.isDone)
                     await Task.Yield();
 
                 if (ct.IsCancellationRequested || uwr.result == UnityWebRequest.Result.ConnectionError || uwr.result == UnityWebRequest.Result.DataProcessingError)
@@ -179,7 +179,7 @@ namespace BundlesLoader.Service
             var url = $"{ASSET_BUNDLES_URL}/" +
                 $"{PlatformDictionary.GetDirectoryByPlatform(Application.platform)}/" +
                 $"{name}";
-
+            
             var versions = new List<Hash128>();
             Caching.GetCachedVersions(name, versions);
 
@@ -201,7 +201,7 @@ namespace BundlesLoader.Service
             using var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, Hash128.Parse(hash));
             uwr.SendWebRequest();
 
-            while (!uwr.isDone || !ct.IsCancellationRequested)
+            while (!uwr.isDone)
                 await Task.Yield();
 
             if (ct.IsCancellationRequested || uwr.result == UnityWebRequest.Result.ConnectionError || uwr.result == UnityWebRequest.Result.DataProcessingError)
