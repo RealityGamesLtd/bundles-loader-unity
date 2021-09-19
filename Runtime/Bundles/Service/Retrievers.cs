@@ -37,7 +37,7 @@ namespace BundlesLoader.Service
 
             var bundlesTask = files.Select(x =>
             {
-                return RetrieveBundle(x);
+                return RetrieveBundle(x, ct);
             }).Where(x => x != null).ToArray();
 
             if (bundlesTask == null)
@@ -51,22 +51,29 @@ namespace BundlesLoader.Service
                 var res = await task;
                 count++;
                 callback?.Invoke((float)count / files.Length);
-                if (!datas.ContainsKey(res.Asset.name))
+                if(res.Item2 != null)
                 {
-                    datas.Add(res.Asset.name, res);
+                    if (!datas.ContainsKey(res.Item1))
+                    {
+                        datas.Add(res.Item1, res.Item2);
+                    }
+                    else
+                    {
+                        Debug.Log($"Dictionary already with this key: {res.Item1}");
+                    }
                 }
                 else
                 {
-                    Debug.Log($"Dictionary already with this key: {res.Asset.name}");
+                    Debug.LogError($"{res.Item1} no bundle downloaded!");
                 }
             }
 
             return datas;
         }
 
-        private async Task<Bundle> RetrieveBundle(string name)
+        private async Task<Tuple<string, Bundle>> RetrieveBundle(string name, CancellationToken ct)
         {
-            Bundle loadedBundle;
+            Tuple<string, Bundle> loadedBundle;
 
             var url = $"{ASSET_BUNDLES_URL}/" +
                 $"{PlatformDictionary.GetDirectoryByPlatform(Application.platform)}/" +
@@ -80,17 +87,24 @@ namespace BundlesLoader.Service
                 while (!fileTask.isDone)
                     await Task.Yield();
 
-                loadedBundle = new Bundle(fileTask.assetBundle, string.Empty);
+                loadedBundle = new Tuple<string, Bundle>(Path.GetFileName(name), new Bundle(fileTask.assetBundle, string.Empty));
             }
             else
             {
-                UnityWebRequest request = UnityWebRequestAssetBundle.GetAssetBundle(url, listOfCachedVersions.Last());
-                var req = request.SendWebRequest();
-                while (!req.isDone)
+                var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, listOfCachedVersions.Last());
+                uwr.SendWebRequest();
+
+                while (!uwr.isDone || !ct.IsCancellationRequested)
                     await Task.Yield();
 
-                var bund = DownloadHandlerAssetBundle.GetContent(request);
-                loadedBundle = new Bundle(bund, listOfCachedVersions.Last().ToString());
+                if (ct.IsCancellationRequested || uwr.result == UnityWebRequest.Result.ConnectionError || uwr.result == UnityWebRequest.Result.DataProcessingError)
+                {
+                    Debug.LogError($"Bundle {Path.GetFileName(name)} loading canceled due to error!");
+                    return new Tuple<string, Bundle>(Path.GetFileName(name), null);
+                }
+
+                var bund = DownloadHandlerAssetBundle.GetContent(uwr);
+                loadedBundle = new Tuple<string, Bundle>(Path.GetFileName(name), new Bundle(bund, listOfCachedVersions.Last().ToString()));
             }
             return loadedBundle;
         }
@@ -123,7 +137,7 @@ namespace BundlesLoader.Service
 
             var tasks = Versions.Select((x) =>
             {
-                return RetrieveBundle(x.Key, x.Value);
+                return RetrieveBundle(x.Key, x.Value, ct);
             }).Where(x => x != null).ToArray();
 
             int count = 0;
@@ -139,19 +153,28 @@ namespace BundlesLoader.Service
                 var res = await task;
                 count++;
                 callback?.Invoke((float)count / Versions.Count);
-                if (!datas.ContainsKey(res.Item1))
+
+                if(res.Item2 != null)
                 {
-                    datas.Add(res.Item1, res.Item2);
+                    if (!datas.ContainsKey(res.Item1))
+                    {
+                        datas.Add(res.Item1, res.Item2);
+                    }
+                    else
+                    {
+                        Debug.Log($"Dictionary already with this key: {res.Item1}");
+                    }
                 }
                 else
                 {
-                    Debug.Log($"Dictionary already with this key: {res.Item1}");
+                    Debug.LogError($"{res.Item1} no bundle downloaded!");
                 }
+
             }
             return datas;
         }
 
-        private async Task<Tuple<string, Bundle>> RetrieveBundle(string name, string hash)
+        private async Task<Tuple<string, Bundle>> RetrieveBundle(string name, string hash, CancellationToken ct)
         {
             var url = $"{ASSET_BUNDLES_URL}/" +
                 $"{PlatformDictionary.GetDirectoryByPlatform(Application.platform)}/" +
@@ -169,20 +192,31 @@ namespace BundlesLoader.Service
                 Debug.Log($"Bundle {name} no cached version founded for this hash...");
             }
 
+            if (ct.IsCancellationRequested)
+            {
+                Debug.LogError($"Bundle {name} loading canceled due to error!");
+                return new Tuple<string, Bundle>(name, null);
+            }
+
             using var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, Hash128.Parse(hash));
             uwr.SendWebRequest();
 
-            while (!uwr.isDone)
+            while (!uwr.isDone || !ct.IsCancellationRequested)
                 await Task.Yield();
+
+            if (ct.IsCancellationRequested || uwr.result == UnityWebRequest.Result.ConnectionError || uwr.result == UnityWebRequest.Result.DataProcessingError)
+            {
+                Debug.LogError($"Bundle {name} loading canceled due to error!");
+                return new Tuple<string, Bundle>(name, null);
+            }
 
             UpdateCachedVersions(name);
             LogRequestResponseStatus(name, uwr);
-
             AssetBundle bundle = DownloadHandlerAssetBundle.GetContent(uwr);
             if (bundle == null)
             {
                 Debug.LogError($"Failed to get bundle content!");
-                return null;
+                return new Tuple<string, Bundle>(name, null);
             }
             else
             {
