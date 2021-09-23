@@ -1,3 +1,4 @@
+using BundlesLoader.Callbacks;
 using UnityEngine;
 using Utils;
 
@@ -31,7 +32,7 @@ namespace BundlesLoader.Bundles.Loaders
 
                 if (sprite == null)
                 {
-                    Debug.LogError($"No sprite to show: {bundleType.FullName}");
+                    Debug.LogError($"Bundle:{split[0]}/{split[1]} -> no texture:{split[2]}");
                     return;
                 }
 
@@ -73,7 +74,8 @@ namespace BundlesLoader.Bundles.Loaders
                 var asset = bundle.Asset;
                 if (asset == null)
                 {
-                    Debug.LogError($"No asset bundle with name:{split[1]}");
+                    Debug.LogError($"No specified asset bundle:{split[1]}");
+                    LogError(new BundleCallback(BundleErrorType.NO_BUNDLE, $"No specified asset bundle:{split[1]}", $"{split[0]}/{split[1]}"));
                     return;
                 }
 
@@ -81,7 +83,9 @@ namespace BundlesLoader.Bundles.Loaders
                 var sprite = asset.LoadAsset<Sprite>(split[2]);
                 if (texture == null && sprite == null)
                 {
-                    Debug.LogError($"No asset in bundle with name:{split[2]}");
+                    Debug.LogError($"Bundle:{split[0]}/{split[1]} -> no texture:{split[2]}");
+                    LogError(new AssetCallback(AssetErrorType.NULL_TEXTURE, $"Bundle:{split[0]}/{split[1]} -> no texture:{split[2]}",
+                        $"{split[0]}/{split[1]}", split[2]));
                     return;
                 }
 

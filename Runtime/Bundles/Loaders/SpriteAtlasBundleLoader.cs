@@ -1,3 +1,4 @@
+using BundlesLoader.Callbacks;
 using UnityEngine;
 using UnityEngine.U2D;
 using Utils;
@@ -32,7 +33,7 @@ namespace BundlesLoader.Bundles.Loaders
 
                 if (spriteAtlas == null)
                 {
-                    Debug.LogError($"No sprite atlas found: {bundleType.FullName}");
+                    Debug.LogError($"Bundle:{split[0]}/{split[1]} -> no sprite atlas:{split[2]}");
                     return;
                 }
 
@@ -40,7 +41,7 @@ namespace BundlesLoader.Bundles.Loaders
 
                 if (sprite == null)
                 {
-                    Debug.LogError($"No sprite to show: {bundleType.FullName}");
+                    Debug.LogError($"Bundle:{split[0]}/{split[1]}, Sprite atlas: {split[2]} -> no sprite: {split[3]}");
                     return;
                 }
 
@@ -82,21 +83,26 @@ namespace BundlesLoader.Bundles.Loaders
                 var asset = bundle.Asset;
                 if (asset == null)
                 {
-                    Debug.LogError($"No asset bundle with name:{split[1]}");
+                    Debug.LogError($"No specified asset bundle:{split[1]}");
+                    LogError(new BundleCallback(BundleErrorType.NO_BUNDLE, $"No specified asset bundle:{split[1]}", $"{split[0]}/{split[1]}"));
                     return;
                 }
 
                 var atlas = asset.LoadAsset<SpriteAtlas>(split[2]);
                 if (atlas == null)
                 {
-                    Debug.LogError($"No asset in bundle with name:{split[2]}");
+                    Debug.LogError($"Bundle:{split[0]}/{split[1]} -> no sprite atlas:{split[2]}");
+                    LogError(new AssetCallback(AssetErrorType.NULL_SPRITEATLAS, $"Bundle:{split[0]}/{split[1]} -> no sprite atlas:{split[2]}",
+                        $"{split[0]}/{split[1]}", split[2]));
                     return;
                 }
 
                 var sprite = atlas.GetSprite(split[3]);
                 if (sprite == null)
                 {
-                    Debug.LogError($"No sprite in atlas with name: {split[3]}");
+                    Debug.LogError($"Bundle:{split[0]}/{split[1]}, Sprite atlas: {split[2]} -> no sprite: {split[3]}");
+                    LogError(new AssetCallback(AssetErrorType.NULL_SPRITE, $"Bundle:{split[0]}/{split[1]}, Sprite atlas: {split[2]} -> no sprite: {split[3]}",
+                        $"{split[0]}/{split[1]}/{split[2]}", split[3]));
                     return;
                 }
 

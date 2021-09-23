@@ -10,7 +10,6 @@ namespace BundlesLoader.Bundles.Loaders.ImageLoader
     {
         private Image image;
 
-
         public override void SetSprite(Sprite sprite)
         {
             if (image == null)

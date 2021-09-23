@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [1.2.2] - 2021-09-22
+- Added bundle loading callback
+
+## [1.2.1] - 2021-09-19
+### Fix
+- Added Null checking to code
+
 ## [1.2.0] - 2021-09-10
 - Added padding setting to spriteatlas in sprite downloader
 - Added bundles asset type property to handle them from list instead of manual string

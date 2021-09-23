@@ -1,3 +1,4 @@
+using BundlesLoader.Callbacks;
 using BundlesLoader.Gif;
 using UnityEngine;
 
@@ -39,14 +40,17 @@ namespace BundlesLoader.Bundles.Loaders
                 var asset = bundle.Asset;
                 if (asset == null)
                 {
-                    Debug.LogError($"No asset bundle with name:{bundleName}");
+                    Debug.LogError($"No specified asset bundle:{bundleName}");
+                    LogError(new BundleCallback(BundleErrorType.NO_BUNDLE, $"No specified asset bundle:{bundleName}", $"{bundleName}"));
                     return;
                 }
 
                 var gifAsset = asset.LoadAsset<TextAsset>(assetName);
                 if (gifAsset == null)
                 {
-                    Debug.LogError($"No asset in bundle with name:{assetName}");
+                    Debug.LogError($"Bundle:{bundleName} -> no gif:{assetName}");
+                    LogError(new AssetCallback(AssetErrorType.NULL_GIF, $"Bundle:{bundleName} -> no gif:{assetName}",
+                        bundleName, assetName));
                     return;
                 }
 
