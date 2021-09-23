@@ -1,5 +1,5 @@
 using BundlesLoader.Bundles.Core;
-using BundlesLoader.Service;
+using BundlesLoader.Callbacks;
 using UnityEngine;
 
 namespace BundlesLoader.Bundles.Loaders
@@ -9,6 +9,8 @@ namespace BundlesLoader.Bundles.Loaders
         [SerializeField] protected BundleType bundleType = new BundleType();
 
         public BundleType BundleType { get => bundleType; }
+
+        public void LogError(IEntityCallback callback) => AssetsServiceLoader.AssetsService.LogErrorAsset(callback);
     }
 }
 

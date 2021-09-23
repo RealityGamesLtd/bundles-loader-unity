@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
+using BundlesLoader.Callbacks;
 
 namespace BundlesLoader.Service
 {
@@ -14,12 +15,13 @@ namespace BundlesLoader.Service
         private const string STREAMING_ASSETS_PATH = "Assets/StreamingAssets/Bundles";
         private readonly string ASSET_BUNDLES_URL;
 
-        private Action<float> callback;
+        public Action<float> ProgressCallback { get; private set; }
+        public Action<IEntityCallback> BundleLoadedCallback { get; set; }
 
         public IOfflineRetriever(string assetBundlesUrl, Action<float> progressCallback)
         {
             ASSET_BUNDLES_URL = assetBundlesUrl;
-            callback = progressCallback;
+            ProgressCallback = progressCallback;
         }
 
         public async Task<Dictionary<string, Bundle>> GetBundles
@@ -50,7 +52,7 @@ namespace BundlesLoader.Service
             {
                 var res = await task;
                 count++;
-                callback?.Invoke((float)count / files.Length);
+                ProgressCallback?.Invoke((float)count / files.Length);
                 if(res.Item2 != null)
                 {
                     if (!datas.ContainsKey(res.Item1))
@@ -87,7 +89,15 @@ namespace BundlesLoader.Service
                 while (!fileTask.isDone)
                     await Task.Yield();
 
-                loadedBundle = new Tuple<string, Bundle>(Path.GetFileName(name), new Bundle(fileTask.assetBundle, string.Empty));
+                if(fileTask.assetBundle != null)
+                {
+                    loadedBundle = new Tuple<string, Bundle>(Path.GetFileName(name), new Bundle(fileTask.assetBundle, string.Empty));
+                }
+                else
+                {
+                    Debug.LogError($"Failed to get bundle content!");
+                    loadedBundle = new Tuple<string, Bundle>(Path.GetFileName(name), null);
+                }
             }
             else
             {
@@ -97,14 +107,30 @@ namespace BundlesLoader.Service
                 while (!uwr.isDone)
                     await Task.Yield();
 
-                if (ct.IsCancellationRequested || uwr.result == UnityWebRequest.Result.ConnectionError || uwr.result == UnityWebRequest.Result.DataProcessingError)
+                if (ct.IsCancellationRequested || uwr.result != UnityWebRequest.Result.Success)
                 {
-                    Debug.LogError($"Bundle {Path.GetFileName(name)} loading canceled due to error!");
+                    Debug.LogError($"Bundle {Path.GetFileName(name)} loading canceled due to error: {uwr.error}!");
+                    BundleLoadedCallback?.Invoke(
+                        new BundleCallback(BundleErrorType.FAILED, $"Bundle {Path.GetFileName(name)} getting error:{uwr.error}!", name));
                     return new Tuple<string, Bundle>(Path.GetFileName(name), null);
                 }
 
                 var bund = DownloadHandlerAssetBundle.GetContent(uwr);
-                loadedBundle = new Tuple<string, Bundle>(Path.GetFileName(name), new Bundle(bund, listOfCachedVersions.Last().ToString()));
+                if (bund == null)
+                {
+                    Debug.LogError($"Failed to get bundle content!");
+                    loadedBundle = new Tuple<string, Bundle>(Path.GetFileName(name), null);
+                    BundleLoadedCallback?.Invoke(new BundleCallback(BundleErrorType.NULL_BUNDLE, $"{Path.GetFileName(name)} no bundle downloaded!", name));
+                }
+                else
+                {
+                    var assets = bund.GetAllAssetNames();
+                    if (assets == null || assets.Length == 0)
+                    {
+                        BundleLoadedCallback?.Invoke(new BundleCallback(BundleErrorType.EMPTY_BUNDLE, $"{Path.GetFileName(name)} bundle is empty!", name));
+                    }
+                    loadedBundle = new Tuple<string, Bundle>(Path.GetFileName(name), new Bundle(bund, listOfCachedVersions.Last().ToString()));
+                }
             }
             return loadedBundle;
         }
@@ -116,13 +142,14 @@ namespace BundlesLoader.Service
         private readonly string ASSET_BUNDLES_URL;
         private readonly Dictionary<string, string> Versions;
 
-        private Action<float> callback;
+        public Action<float> ProgressCallback { get; private set; }
+        public Action<IEntityCallback> BundleLoadedCallback { get; set; }
 
         public IOnlineRetriever(Dictionary<string, string> versions, string assetBundlesUrl, Action<float> progressCallback)
         {
             ASSET_BUNDLES_URL = assetBundlesUrl;
             Versions = versions;
-            callback = progressCallback;
+            ProgressCallback = progressCallback;
         }
 
         public async Task<Dictionary<string, Bundle>> GetBundles
@@ -152,7 +179,7 @@ namespace BundlesLoader.Service
             {
                 var res = await task;
                 count++;
-                callback?.Invoke((float)count / Versions.Count);
+                ProgressCallback?.Invoke((float)count / Versions.Count);
 
                 if(res.Item2 != null)
                 {
@@ -169,7 +196,6 @@ namespace BundlesLoader.Service
                 {
                     Debug.LogError($"{res.Item1} no bundle downloaded!");
                 }
-
             }
             return datas;
         }
@@ -195,6 +221,8 @@ namespace BundlesLoader.Service
             if (ct.IsCancellationRequested)
             {
                 Debug.LogError($"Bundle {name} loading canceled due to error!");
+                BundleLoadedCallback?.Invoke(
+                    new BundleCallback(BundleErrorType.FAILED, $"Bundle {name} getting canceled!", name));
                 return new Tuple<string, Bundle>(name, null);
             }
 
@@ -204,9 +232,11 @@ namespace BundlesLoader.Service
             while (!uwr.isDone)
                 await Task.Yield();
 
-            if (ct.IsCancellationRequested || uwr.result == UnityWebRequest.Result.ConnectionError || uwr.result == UnityWebRequest.Result.DataProcessingError)
+            if (ct.IsCancellationRequested || uwr.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError($"Bundle {name} loading canceled due to error!");
+                Debug.LogError($"Bundle {name} getting failed due to error: {uwr.error}!");
+                BundleLoadedCallback?.Invoke(
+                    new BundleCallback(BundleErrorType.FAILED, $"Bundle {name} getting failed due to error: {uwr.error}!", name));
                 return new Tuple<string, Bundle>(name, null);
             }
 
@@ -216,10 +246,16 @@ namespace BundlesLoader.Service
             if (bundle == null)
             {
                 Debug.LogError($"Failed to get bundle content!");
+                BundleLoadedCallback?.Invoke(new BundleCallback(BundleErrorType.NULL_BUNDLE, $"{name} no bundle downloaded!", name));
                 return new Tuple<string, Bundle>(name, null);
             }
             else
             {
+                var assets = bundle.GetAllAssetNames();
+                if (assets == null || assets.Length == 0)
+                {
+                    BundleLoadedCallback?.Invoke(new BundleCallback(BundleErrorType.EMPTY_BUNDLE, $"{name} bundle is empty!", name));
+                }
                 return new Tuple<string, Bundle>(name, new Bundle(bundle, hash));
             }
         }
@@ -252,10 +288,6 @@ namespace BundlesLoader.Service
                 {
                     Debug.Log($"Bundle {name} version was downloaded from server");
                 }
-            }
-            else
-            {
-                Debug.Log($"Bundle {name} not downloaded, with error {uwr.error}");
             }
         }
     }
