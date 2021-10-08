@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.U2D;
+using Utils;
 
 namespace BundlesLoader.EditorHelpers.Tools.Bundles
 {
@@ -24,7 +25,7 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
 
         public static string CreateNames(List<Container> objects)
         {
-            RootObject root = new RootObject() { RootName = "Bundles", Names = new List<Child>() };
+            RootObject root = new RootObject() { RootName = Symbols.BUNDLES_SUBDIRECTORY, Names = new List<Child>() };
 
             foreach(var obj in objects)
             {

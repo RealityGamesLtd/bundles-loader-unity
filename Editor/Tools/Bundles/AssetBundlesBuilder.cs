@@ -4,25 +4,23 @@ using System.Linq;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
+using Utils;
 
 namespace BundlesLoader.EditorHelpers.Tools.Bundles
 {
     public static class AssetBundleBuilder
     {
-        private const string ASSET_BUNDLE_PATH = "Assets/AssetBundles";
-        private const string STREAMING_ASSETS_PATH = "Assets/StreamingAssets/Bundles";
-
         public static void BuildBundles(string currentTarget)
         {
-            if (!Directory.Exists($"{ASSET_BUNDLE_PATH}/{currentTarget}"))
+            if (!Directory.Exists($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}"))
             {
                 Debug.LogError("Asset Bundle directory doesn't exist! Creating directory!");
-                Directory.CreateDirectory($"{ASSET_BUNDLE_PATH}/{currentTarget}");
+                Directory.CreateDirectory($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}");
             }
 
             BuildTarget target = System.Enum.TryParse<BuildTarget>(currentTarget, out var res) ?
                 res : EditorUserBuildSettings.activeBuildTarget;
-            BuildPipeline.BuildAssetBundles($"{ASSET_BUNDLE_PATH}/{currentTarget}",
+            BuildPipeline.BuildAssetBundles($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}",
                 BuildAssetBundleOptions.None, target);
 
             GenerateVersions(currentTarget);
@@ -39,9 +37,9 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
 
             if (freshBuild)
             {
-                if (Directory.Exists($"{ASSET_BUNDLE_PATH}/{currentTarget}"))
+                if (Directory.Exists($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}"))
                 {
-                    var filesToDelete = Directory.GetFiles($"{ASSET_BUNDLE_PATH}/{currentTarget}").ToArray();
+                    var filesToDelete = Directory.GetFiles($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}").ToArray();
                     for (int i = 0; i < filesToDelete.Length; ++i)
                     {
                         File.Delete(filesToDelete[i]);
@@ -62,18 +60,18 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
                 buildMap[i].assetBundleName = objects[i].BundleName;
             }
 
-            if (!Directory.Exists($"{ASSET_BUNDLE_PATH}/{currentTarget}"))
+            if (!Directory.Exists($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}"))
             {
                 Debug.LogError("Asset Bundle directory doesn't exist! Creating directory!");
-                Directory.CreateDirectory($"{ASSET_BUNDLE_PATH}/{currentTarget}");
+                Directory.CreateDirectory($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}");
             }
 
             BuildTarget target = System.Enum.TryParse<BuildTarget>(currentTarget, out var res) ?
                 res : EditorUserBuildSettings.activeBuildTarget;
-            var manifest = BuildPipeline.BuildAssetBundles($"{ASSET_BUNDLE_PATH}/{currentTarget}", buildMap,
+            var manifest = BuildPipeline.BuildAssetBundles($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}", buildMap,
                 BuildAssetBundleOptions.None, target);
 
-            var files = Directory.GetFiles($"{ASSET_BUNDLE_PATH}/{currentTarget}");
+            var files = Directory.GetFiles($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}");
             for (int i = 0; i < files.Length; ++i)
             {
                 AssetDatabase.ImportAsset(files[i], ImportAssetOptions.ForceUpdate);
@@ -87,17 +85,17 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
 
         private static void SetUpEditorAssets(string currentTarget)
         {
-            var bundles = Directory.GetFiles($"{ASSET_BUNDLE_PATH}/{currentTarget}")
+            var bundles = Directory.GetFiles($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}")
                 .Where(x => !Path.GetFileName(x).Equals(currentTarget) && string.IsNullOrEmpty(Path.GetExtension(x))).ToArray();
 
-            if (!Directory.Exists($"{STREAMING_ASSETS_PATH}"))
+            if (!Directory.Exists($"{Symbols.STREAMING_ASSET_BUNDLE_PATH}"))
             {
                 Debug.LogError("Streaming Asset Bundle directory doesn't exist! Creating directory!");
-                Directory.CreateDirectory($"{STREAMING_ASSETS_PATH}");
+                Directory.CreateDirectory($"{Path.Combine(Application.streamingAssetsPath, Symbols.BUNDLES_SUBDIRECTORY)}");
             }
             else
             {
-                var streamingFiles = Directory.GetFiles($"{STREAMING_ASSETS_PATH}").ToArray();
+                var streamingFiles = Directory.GetFiles($"{Symbols.STREAMING_ASSET_BUNDLE_PATH}").ToArray();
                 for (int i = 0; i < streamingFiles.Length; ++i)
                 {
                     File.Delete(streamingFiles[i]);
@@ -105,7 +103,7 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
             }
             for (int i = 0; i < bundles.Length; ++i)
             {
-                var newPath = $"{STREAMING_ASSETS_PATH}/{Path.GetFileName(bundles[i])}";
+                var newPath = $"{Symbols.STREAMING_ASSET_BUNDLE_PATH}/{Path.GetFileName(bundles[i])}";
                 File.Copy(bundles[i], newPath);
                 AssetDatabase.ImportAsset(newPath, ImportAssetOptions.ForceUpdate);
             }
@@ -113,18 +111,18 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
 
         private static bool GenerateNames(List<Container> objects)
         {
-            var currentNames = File.ReadAllText($"{ASSET_BUNDLE_PATH}/names.json");
+            var currentNames = File.ReadAllText($"{Symbols.ASSET_BUNDLE_PATH}/{Symbols.NAMES_FILE_NAME}");
 
             var json = AssetBundlesNamesCreator.CreateNames(objects);
-            File.WriteAllText($"{ASSET_BUNDLE_PATH}/names.json", json);
-            AssetDatabase.ImportAsset($"{ASSET_BUNDLE_PATH}/names.json", ImportAssetOptions.ForceUpdate);
+            File.WriteAllText($"{Symbols.ASSET_BUNDLE_PATH}/{Symbols.NAMES_FILE_NAME}", json);
+            AssetDatabase.ImportAsset($"{Symbols.ASSET_BUNDLE_PATH}/{Symbols.NAMES_FILE_NAME}", ImportAssetOptions.ForceUpdate);
 
             return currentNames.Equals(json);
         }
 
         private static void GenerateVersions(string currentTarget)
         {
-            var files = Directory.GetFiles($"{ASSET_BUNDLE_PATH}/{currentTarget}")
+            var files = Directory.GetFiles($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}")
                 .Where(x => !Path.GetFileName(x).Equals(currentTarget) && string.IsNullOrEmpty(Path.GetExtension(x))).ToArray();
 
             Dictionary<string, string> tokens = new Dictionary<string, string>();
@@ -142,8 +140,8 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
             }
 
             var json = JsonConvert.SerializeObject(tokens, Formatting.Indented);
-            File.WriteAllText($"{ASSET_BUNDLE_PATH}/{currentTarget}/version.json", json);
-            AssetDatabase.ImportAsset($"{ASSET_BUNDLE_PATH}/{currentTarget}/version.json", ImportAssetOptions.ForceUpdate);
+            File.WriteAllText($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}/{Symbols.VERSION_FILE_NAME}", json);
+            AssetDatabase.ImportAsset($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}/{Symbols.VERSION_FILE_NAME}", ImportAssetOptions.ForceUpdate);
         }
 
         private static string Md5Sum(byte[] bytes)
