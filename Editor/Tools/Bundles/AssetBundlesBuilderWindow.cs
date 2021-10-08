@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+using Utils;
 
 namespace BundlesLoader.EditorHelpers.Tools.Bundles
 {
@@ -16,8 +17,6 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
 
     public class AssetBundleBuilderWindow : EditorWindow
     {
-        private const string ASSET_BUNDLE_PATH = "Assets/AssetBundles";
-
         [SerializeField] private List<Container> selectedObjects;
 
         private Vector2 scrollPos;
@@ -82,14 +81,14 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
 
         private async Task LoadBundles()
         {
-            if (!Directory.Exists($"{ASSET_BUNDLE_PATH}/{targets[index]}"))
+            if (!Directory.Exists($"{Symbols.ASSET_BUNDLE_PATH}/{targets[index]}"))
             {
                 EditorUtility.DisplayDialog("Asset Bundle Builder", "Asset Bundle directory doesn't exist!", "Ok");
                 Debug.LogError("Asset Bundle directory doesn't exist!");
                 return;
             }
 
-            var files = Directory.GetFiles($"{ASSET_BUNDLE_PATH}/{targets[index]}")
+            var files = Directory.GetFiles($"{Symbols.ASSET_BUNDLE_PATH}/{targets[index]}")
                 .Where(x => !Path.GetFileName(x).Equals(targets[index]) && string.IsNullOrEmpty(Path.GetExtension(x))).ToArray();
 
             if (files.Length <= 0)

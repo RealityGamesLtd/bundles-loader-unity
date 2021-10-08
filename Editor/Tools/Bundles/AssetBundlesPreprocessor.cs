@@ -4,40 +4,64 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
+using Utils;
 
 namespace BundlesLoader.EditorHelpers.Tools.Bundles
 {
     public class AssetBundlesPreprocessor : IPreprocessBuildWithReport
     {
-        private const string ASSET_BUNDLE_PATH = "Assets/AssetBundles";
-        private const string STREAMING_ASSETS_PATH = "Assets/StreamingAssets/Bundles";
-
         public int callbackOrder { get { return 0; } }
 
         public void OnPreprocessBuild(BuildReport report)
         {
-            var bundles = Directory.GetFiles($"{ASSET_BUNDLE_PATH}/{EditorUserBuildSettings.activeBuildTarget}")
-                .Where(x => !Path.GetFileName(x).Equals(EditorUserBuildSettings.activeBuildTarget.ToString())
-                            && string.IsNullOrEmpty(Path.GetExtension(x))).ToArray();
+            var assetBundlesPath = $"{Symbols.ASSET_BUNDLE_PATH}/{EditorUserBuildSettings.activeBuildTarget}";
 
-            if (!Directory.Exists($"{STREAMING_ASSETS_PATH}"))
+            if (Directory.Exists(assetBundlesPath))
             {
-                Debug.LogError("Streaming Asset Bundle directory doesn't exist! Creating directory!");
+                var files = Directory.GetFiles(assetBundlesPath).ToList();
+
+                var bundles = files.Where(x => !Path.GetFileName(x).Equals(EditorUserBuildSettings.activeBuildTarget.ToString())
+                    && string.IsNullOrEmpty(Path.GetExtension(x))).ToArray();
+                var versionFile = files.Find(x => Path.GetExtension(x).Equals(".json"));
+
+                if(bundles != null && versionFile !=  null)
+                {
+                    var path = Path.Combine(Application.streamingAssetsPath, Symbols.BUNDLES_SUBDIRECTORY);
+
+                    if (!Directory.Exists(path))
+                    {
+                        Debug.LogError("Streaming Asset Bundle directory doesn't exist! Creating directory!");
+                    }
+                    else
+                    {
+                        var streamingFiles = Directory.GetFiles(path).ToArray();
+                        for (int i = 0; i < streamingFiles.Length; ++i)
+                        {
+                            File.Delete(streamingFiles[i]);
+                        }
+                    }
+
+                    for (int i = 0; i < bundles.Length; ++i)
+                    {
+                        var bundlePath = Path.Combine(path, Path.GetFileName(bundles[i]));
+                        File.Copy(bundles[i], bundlePath);
+                        AssetDatabase.ImportAsset(bundlePath, ImportAssetOptions.ForceUpdate);
+                    }
+
+                    if (versionFile != null)
+                    {
+                        var versionPath = Path.Combine(path, Path.GetFileName(versionFile));
+                        File.Copy(versionFile, versionPath);
+                        AssetDatabase.ImportAsset(versionPath, ImportAssetOptions.ForceUpdate);
+                    }
+                    else
+                        Debug.LogError("No version file found!");
+                }
+                else
+                    Debug.LogError($"Bundles or version file not found inside: {assetBundlesPath}!");
             }
             else
-            {
-                var streamingFiles = Directory.GetFiles($"{STREAMING_ASSETS_PATH}").ToArray();
-                for (int i = 0; i < streamingFiles.Length; ++i)
-                {
-                    File.Delete(streamingFiles[i]);
-                }
-            }
-            for (int i = 0; i < bundles.Length; ++i)
-            {
-                var newPath = $"{STREAMING_ASSETS_PATH}/{Path.GetFileName(bundles[i])}";
-                File.Copy(bundles[i], newPath);
-                AssetDatabase.ImportAsset(newPath, ImportAssetOptions.ForceUpdate);
-            }
+                Debug.LogError($"No directory {assetBundlesPath}!");
         }
     }
 }

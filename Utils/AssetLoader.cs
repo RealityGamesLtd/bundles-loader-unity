@@ -1,6 +1,6 @@
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -10,13 +10,11 @@ namespace Utils
 {
     public class AssetLoader
     {
-        private const string ASSET_BUNDLE_PATH = "Assets/AssetBundles";
-
         public static T GetAsset<T>(string assetBundleName, string assetName)
             where T : Object
         {
 #if UNITY_EDITOR
-            if (!Directory.Exists(ASSET_BUNDLE_PATH))
+            if (!Directory.Exists(Symbols.ASSET_BUNDLE_PATH))
             {
                 Debug.LogError("No directory found!");
                 return null;

@@ -15,6 +15,7 @@ using UnityEngine.U2D;
 using UnityEditor.U2D;
 using BundlesLoader.EditorHelpers.Tools.SpriteDownloader.Packs;
 using System.Text.RegularExpressions;
+using Utils;
 
 namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader
 {
@@ -33,7 +34,6 @@ namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader
         }
 
         private const string PACKAGE_NAME = "com.realitygames.bundlesloader";
-        private const string TEXTURES_PATH = "Assets/Textures/spritesheets";
 
         private readonly UnityEvent OnDownloaded = new UnityEvent();
         private readonly UnityEvent OnSaved = new UnityEvent();
@@ -247,10 +247,10 @@ namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader
             for (int i = 0; i < packs.Length; ++i)
             {
                 byte[] bytes = packs[i].Bytes;
-                if (!Directory.Exists($"{TEXTURES_PATH}/{packs[i].Parent}"))
+                if (!Directory.Exists($"{Symbols.TEXTURES_PATH}/{packs[i].Parent}"))
                 {
-                    Debug.LogWarning($"{TEXTURES_PATH}/{packs[i].Parent} directory doesn't exist! Creating a new one!");
-                    Directory.CreateDirectory($"{TEXTURES_PATH}/{packs[i].Parent}");
+                    Debug.LogWarning($"{Symbols.TEXTURES_PATH}/{packs[i].Parent} directory doesn't exist! Creating a new one!");
+                    Directory.CreateDirectory($"{Symbols.TEXTURES_PATH}/{packs[i].Parent}");
                 }
 
                 if(Regex.Match(packs[i].Name, AssetsRegexs.BYTE_REGEX).Success)
@@ -258,7 +258,7 @@ namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader
                     packs[i].Name = $"{Path.GetFileName(packs[i].Name)}.bytes";
                 }
 
-                var path = $"{TEXTURES_PATH}/{packs[i].Parent}/{packs[i].Name}";
+                var path = $"{Symbols.TEXTURES_PATH}/{packs[i].Parent}/{packs[i].Name}";
                 string metaContent = string.Empty;
                 if (File.Exists($"{path}.meta"))
                 {
@@ -299,7 +299,7 @@ namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader
         {
             foreach (var pair in textures)
             {
-                var path = $"{TEXTURES_PATH}/{pair.Key}/{pair.Key}.spriteatlas";
+                var path = $"{Symbols.TEXTURES_PATH}/{pair.Key}/{pair.Key}.spriteatlas";
 
                 SpriteAtlas sa = new SpriteAtlas();
                 sa.SetPackingSettings(new SpriteAtlasPackingSettings() { enableTightPacking = false, enableRotation = false, padding = 4 });
@@ -310,7 +310,7 @@ namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader
 
                 for(int i = 0; i < pair.Value.Length; ++i)
                 {
-                    sprites[i] = AssetDatabase.LoadAssetAtPath<Sprite>($"{TEXTURES_PATH}/{pair.Key}/{pair.Value[i]}");
+                    sprites[i] = AssetDatabase.LoadAssetAtPath<Sprite>($"{Symbols.TEXTURES_PATH}/{pair.Key}/{pair.Value[i]}");
                 }
 
                 if (sprites != null)

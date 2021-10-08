@@ -7,34 +7,39 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System;
 using BundlesLoader.Callbacks;
+using Utils;
 
 namespace BundlesLoader.Service
 {
     public class IOfflineRetriever : IBundleRetriever
     {
-        private const string STREAMING_ASSETS_PATH = "Assets/StreamingAssets/Bundles";
         private readonly string ASSET_BUNDLES_URL;
+        private readonly Dictionary<string, string> Versions;
 
         public Action<float> ProgressCallback { get; private set; }
         public Action<IEntityCallback> BundleLoadedCallback { get; set; }
 
-        public IOfflineRetriever(string assetBundlesUrl, Action<float> progressCallback)
+        public IOfflineRetriever(Dictionary<string, string> versions, string assetBundlesUrl, Action<float> progressCallback)
         {
             ASSET_BUNDLES_URL = assetBundlesUrl;
+            Versions = versions;
             ProgressCallback = progressCallback;
         }
 
-        public async Task<Dictionary<string, Bundle>> GetBundles
-            (CancellationToken ct)
+        public async Task GetBundles(CancellationToken ct, Action<string, Bundle> func)
         {
-            Dictionary<string, Bundle> datas = new Dictionary<string, Bundle>();
-
-            if (!Directory.Exists(STREAMING_ASSETS_PATH))
+            while (!Caching.ready)
             {
-                Debug.LogError("No directory found!");
-                return datas;
+                await Task.Yield();
             }
-            var files = Directory.GetFiles(STREAMING_ASSETS_PATH).Where(x => string.IsNullOrEmpty(Path.GetExtension(x))).ToArray();
+
+            if (Versions == null || Versions.Count == 0)
+            {
+                Debug.LogError("No versions!");
+                return;
+            }
+
+            var files = Versions.Select(x => x.Key).ToArray();
             int count = 0;
 
             var bundlesTask = files.Select(x =>
@@ -45,32 +50,20 @@ namespace BundlesLoader.Service
             if (bundlesTask == null)
             {
                 Debug.LogError("Tasks for  bundles are null!");
-                return datas;
+                return;
             }
 
             foreach (var task in bundlesTask)
             {
                 var res = await task;
                 count++;
-                ProgressCallback?.Invoke((float)count / files.Length);
-                if(res.Item2 != null)
-                {
-                    if (!datas.ContainsKey(res.Item1))
-                    {
-                        datas.Add(res.Item1, res.Item2);
-                    }
-                    else
-                    {
-                        Debug.Log($"Dictionary already with this key: {res.Item1}");
-                    }
-                }
-                else
-                {
-                    Debug.LogError($"{res.Item1} no bundle downloaded!");
-                }
-            }
 
-            return datas;
+                if (res.Item2 != null)
+                {
+                    func?.Invoke(res.Item1, res.Item2);
+                }
+                ProgressCallback?.Invoke((float)count / files.Length);
+            }
         }
 
         private async Task<Tuple<string, Bundle>> RetrieveBundle(string name, CancellationToken ct)
@@ -79,26 +72,29 @@ namespace BundlesLoader.Service
 
             var url = $"{ASSET_BUNDLES_URL}/" +
                 $"{PlatformDictionary.GetDirectoryByPlatform(Application.platform)}/" +
-                $"{Path.GetFileName(name)}";
+                $"{name}";
             List<Hash128> listOfCachedVersions = new List<Hash128>();
-            Caching.GetCachedVersions(Path.GetFileName(name), listOfCachedVersions);
+            Caching.GetCachedVersions(name, listOfCachedVersions);
 
+            //If no cached bundles are present and we are offline (First game run)
             if (listOfCachedVersions.Count < 1)
             {
-                var fileTask = AssetBundle.LoadFromFileAsync(Path.Combine(STREAMING_ASSETS_PATH, Path.GetFileName(name)));
+                var fileTask = AssetBundle.LoadFromFileAsync(
+                    Path.Combine(Path.Combine(Application.streamingAssetsPath, Symbols.BUNDLES_SUBDIRECTORY), name));
                 while (!fileTask.isDone)
                     await Task.Yield();
 
-                if(fileTask.assetBundle != null)
+                if (fileTask.assetBundle != null)
                 {
-                    loadedBundle = new Tuple<string, Bundle>(Path.GetFileName(name), new Bundle(fileTask.assetBundle, string.Empty));
+                    loadedBundle = new Tuple<string, Bundle>(name, new Bundle(fileTask.assetBundle, string.Empty));
                 }
                 else
                 {
                     Debug.LogError($"Failed to get bundle content!");
-                    loadedBundle = new Tuple<string, Bundle>(Path.GetFileName(name), null);
+                    loadedBundle = new Tuple<string, Bundle>(name, null);
                 }
             }
+            //If there are some cached bundles present and we want to get them instead of local bundles from files (Second game run)
             else
             {
                 var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, listOfCachedVersions.Last());
@@ -109,27 +105,27 @@ namespace BundlesLoader.Service
 
                 if (ct.IsCancellationRequested || uwr.result != UnityWebRequest.Result.Success)
                 {
-                    Debug.LogError($"Bundle {Path.GetFileName(name)} loading canceled due to error: {uwr.error}!");
+                    Debug.LogError($"Bundle {name} loading canceled due to error: {uwr.error}!");
                     BundleLoadedCallback?.Invoke(
-                        new BundleCallback(BundleErrorType.FAILED, $"Bundle {Path.GetFileName(name)} getting error:{uwr.error}!", name));
-                    return new Tuple<string, Bundle>(Path.GetFileName(name), null);
+                        new BundleCallback(BundleErrorType.FAILED, $"Bundle {name} getting error:{uwr.error}!", name));
+                    return new Tuple<string, Bundle>(name, null);
                 }
 
                 var bund = DownloadHandlerAssetBundle.GetContent(uwr);
                 if (bund == null)
                 {
                     Debug.LogError($"Failed to get bundle content!");
-                    loadedBundle = new Tuple<string, Bundle>(Path.GetFileName(name), null);
-                    BundleLoadedCallback?.Invoke(new BundleCallback(BundleErrorType.NULL_BUNDLE, $"{Path.GetFileName(name)} no bundle downloaded!", name));
+                    loadedBundle = new Tuple<string, Bundle>(name, null);
+                    BundleLoadedCallback?.Invoke(new BundleCallback(BundleErrorType.NULL_BUNDLE, $"{name} no bundle downloaded!", name));
                 }
                 else
                 {
                     var assets = bund.GetAllAssetNames();
                     if (assets == null || assets.Length == 0)
                     {
-                        BundleLoadedCallback?.Invoke(new BundleCallback(BundleErrorType.EMPTY_BUNDLE, $"{Path.GetFileName(name)} bundle is empty!", name));
+                        BundleLoadedCallback?.Invoke(new BundleCallback(BundleErrorType.EMPTY_BUNDLE, $"{name} bundle is empty!", name));
                     }
-                    loadedBundle = new Tuple<string, Bundle>(Path.GetFileName(name), new Bundle(bund, listOfCachedVersions.Last().ToString()));
+                    loadedBundle = new Tuple<string, Bundle>(name, new Bundle(bund, listOfCachedVersions.Last().ToString()));
                 }
             }
             return loadedBundle;
@@ -138,7 +134,7 @@ namespace BundlesLoader.Service
 
     public class IOnlineRetriever : IBundleRetriever
     {
-        private const int CACHE_COUNT_MAX = 5;
+        private const int CACHE_COUNT_MAX = 2;
         private readonly string ASSET_BUNDLES_URL;
         private readonly Dictionary<string, string> Versions;
 
@@ -152,14 +148,17 @@ namespace BundlesLoader.Service
             ProgressCallback = progressCallback;
         }
 
-        public async Task<Dictionary<string, Bundle>> GetBundles
-            (CancellationToken ct)
+        public async Task GetBundles(CancellationToken ct, Action<string, Bundle> func)
         {
-            Dictionary<string, Bundle> datas = new Dictionary<string, Bundle>();
+            while (!Caching.ready)
+            {
+                await Task.Yield();
+            }
+
             if (Versions == null || Versions.Count == 0)
             {
                 Debug.LogError("No versions!");
-                return datas;
+                return;
             }
 
             var tasks = Versions.Select((x) =>
@@ -172,61 +171,45 @@ namespace BundlesLoader.Service
             if (tasks == null)
             {
                 Debug.LogError("Tasks for  bundles are null!");
-                return datas;
+                return;
             }
 
             foreach (var task in tasks)
             {
                 var res = await task;
                 count++;
-                ProgressCallback?.Invoke((float)count / Versions.Count);
 
-                if(res.Item2 != null)
+                if (res.Item2 != null)
                 {
-                    if (!datas.ContainsKey(res.Item1))
-                    {
-                        datas.Add(res.Item1, res.Item2);
-                    }
-                    else
-                    {
-                        Debug.Log($"Dictionary already with this key: {res.Item1}");
-                    }
+                    func?.Invoke(res.Item1, res.Item2);
                 }
-                else
-                {
-                    Debug.LogError($"{res.Item1} no bundle downloaded!");
-                }
+                ProgressCallback?.Invoke((float)count / Versions.Count);
             }
-            return datas;
         }
 
         private async Task<Tuple<string, Bundle>> RetrieveBundle(string name, string hash, CancellationToken ct)
         {
+            //Handler for new bundles from server
+
             var url = $"{ASSET_BUNDLES_URL}/" +
                 $"{PlatformDictionary.GetDirectoryByPlatform(Application.platform)}/" +
                 $"{name}";
-            
+
             var versions = new List<Hash128>();
             Caching.GetCachedVersions(name, versions);
+            var parsedHash = Hash128.Parse(hash);
 
-            if (Caching.IsVersionCached(url, Hash128.Parse(hash)))
+            if (Caching.IsVersionCached(name, parsedHash) && IsBundleLoaded(name))
             {
-                Debug.Log($"Bundle {name} with this hash is already cached!");
+                Debug.Log($"Bundle {name} with this hash is already cached/downloaded and loaded into memory, omitting...!");
+                return new Tuple<string, Bundle>(name, null);
             }
             else
             {
                 Debug.Log($"Bundle {name} no cached version founded for this hash...");
             }
 
-            if (ct.IsCancellationRequested)
-            {
-                Debug.LogError($"Bundle {name} loading canceled due to error!");
-                BundleLoadedCallback?.Invoke(
-                    new BundleCallback(BundleErrorType.FAILED, $"Bundle {name} getting canceled!", name));
-                return new Tuple<string, Bundle>(name, null);
-            }
-
-            using var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, Hash128.Parse(hash));
+            using var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, parsedHash);
             uwr.SendWebRequest();
 
             while (!uwr.isDone)
@@ -242,6 +225,8 @@ namespace BundlesLoader.Service
 
             UpdateCachedVersions(name);
             LogRequestResponseStatus(name, uwr);
+            UnloadRedundantAsset(name);
+
             AssetBundle bundle = DownloadHandlerAssetBundle.GetContent(uwr);
             if (bundle == null)
             {
@@ -257,6 +242,50 @@ namespace BundlesLoader.Service
                     BundleLoadedCallback?.Invoke(new BundleCallback(BundleErrorType.EMPTY_BUNDLE, $"{name} bundle is empty!", name));
                 }
                 return new Tuple<string, Bundle>(name, new Bundle(bundle, hash));
+            }
+        }
+
+        private bool IsBundleLoaded(string name)
+        {
+            var loadedBundles = AssetBundle.GetAllLoadedAssetBundles();
+            if (loadedBundles != null)
+            {
+                var list = loadedBundles.ToList();
+                var loadedBundle = list.Find(x => x.name.Equals(name));
+                if (loadedBundle != null)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private void UnloadRedundantAsset(string name)
+        {
+            var loadedBundles = AssetBundle.GetAllLoadedAssetBundles();
+            if (loadedBundles != null)
+            {
+                var list = loadedBundles.ToList();
+                var loadedBundle = list.Find(x => x.name.Equals(name));
+                if (loadedBundle != null)
+                {
+                    loadedBundle.Unload(false);
+                }
+                else
+                {
+                    Debug.LogWarning($"No bundle:{name} loaded!");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("No bundles loaded!");
             }
         }
 
