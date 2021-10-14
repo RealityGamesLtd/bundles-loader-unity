@@ -31,6 +31,7 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
                     if (!Directory.Exists(path))
                     {
                         Debug.LogError("Streaming Asset Bundle directory doesn't exist! Creating directory!");
+                        Directory.CreateDirectory(path);
                     }
                     else
                     {
