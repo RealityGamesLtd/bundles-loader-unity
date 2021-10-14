@@ -63,7 +63,7 @@ namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader.Window
         {
             UserCredential credential;
             using (var stream =
-                new FileStream($"Assets/{PACKAGE_NAME}/credentials.json", FileMode.Open, FileAccess.Read))
+                new FileStream($"Packages/{PACKAGE_NAME}/credentials.json", FileMode.Open, FileAccess.Read))
             {
                 string credPath = Application.persistentDataPath + "/token.json";
                 credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
