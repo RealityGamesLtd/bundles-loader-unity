@@ -27,7 +27,7 @@ namespace BundlesLoader
         }
 
         [Obsolete("Use GetSprite(AssetType) instead")]
-        public static Sprite GetSprite(Service.IAssetsService assetsService, string bundleName, string assetName, string spriteInAtlas = "")
+        public static Sprite GetSprite(Service.IAssetsService assetsService, string bundleName, string assetName, string atlasName = "")
         {
             if (assetsService == null)
             {
@@ -56,19 +56,19 @@ namespace BundlesLoader
             }
 
             Sprite sprite;
-            if (spriteInAtlas != string.Empty)
+            if (atlasName != string.Empty)
             {
-                var atlas = asset.LoadAsset<SpriteAtlas>(assetName);
+                var atlas = asset.LoadAsset<SpriteAtlas>(atlasName);
                 if (atlas == null)
                 {
-                    Debug.LogError($"No asset in bundle with name: {assetName}");
+                    Debug.LogError($"No asset in bundle with name: {atlasName}");
                     return null;
                 }
 
-                sprite = atlas.GetSprite(spriteInAtlas);
+                sprite = atlas.GetSprite(assetName);
                 if (sprite == null)
                 {
-                    Debug.LogError($"No sprite in atlas with name: {spriteInAtlas}");
+                    Debug.LogError($"No sprite in atlas with name: {assetName}");
                     return null;
                 }
             }
