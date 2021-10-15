@@ -9,11 +9,20 @@ namespace BundlesLoader.Bundles.Loaders
         protected abstract void SetSprite(Sprite sprite);
 
         [Obsolete("Use LoadSprite(AssetType) instead")]
-        public void LoadSprite(string bundleName, string assetName, string spriteInAtlas = "")
+        public void LoadSprite(string bundleName, string spriteName)
         {
             var assetsService = AssetsServiceLoader.AssetsService;
 
-            var sprite = AssetRetriever.GetSprite(assetsService, bundleName, assetName, spriteInAtlas);
+            var sprite = AssetRetriever.GetSprite(assetsService, bundleName, spriteName);
+            if (sprite != null) SetSprite(sprite);
+        }
+
+        [Obsolete("Use LoadSprite(AssetType) instead")]
+        public void LoadSprite(string bundleName, string spriteName, string atlasName)
+        {
+            var assetsService = AssetsServiceLoader.AssetsService;
+
+            var sprite = AssetRetriever.GetSprite(assetsService, bundleName, spriteName, atlasName);
             if (sprite != null) SetSprite(sprite);
         }
 
