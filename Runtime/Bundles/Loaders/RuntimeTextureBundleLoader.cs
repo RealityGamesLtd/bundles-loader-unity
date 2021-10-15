@@ -18,7 +18,7 @@ namespace BundlesLoader.Bundles.Loaders
         }
 
         [Obsolete("Use LoadSprite(AssetType) instead")]
-        public void LoadSprite(string bundleName, string spriteName, string atlasName)
+        public void LoadSprite(string bundleName, string atlasName, string spriteName)
         {
             var assetsService = AssetsServiceLoader.AssetsService;
 
