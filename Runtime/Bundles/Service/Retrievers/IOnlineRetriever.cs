@@ -91,7 +91,7 @@ namespace BundlesLoader.Service.Retrievers
             }
             else
             {
-                Debug.LogWarning($"ONLINE PROVIDER: Bundle {name} no cached version founded for this hash...");
+                Debug.LogWarning($"ONLINE PROVIDER: Bundle {name} no cached version founded for this hash: {hash}...");
             }
 
             using var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, parsedHash);

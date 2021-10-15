@@ -153,7 +153,7 @@ namespace BundlesLoader.Service.Retrievers
                         BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.OFFLINE, BundleErrorType.EMPTY_BUNDLE, $"{name} bundle is empty!", name));
                     }
 
-                    Debug.LogError($"OFFLINE PROVIDER: {name} bundle loaded from cache succesfully!");
+                    Debug.Log($"OFFLINE PROVIDER: {name} bundle loaded from cache succesfully!");
                     loadedBundle = new Tuple<string, Bundle>(name, new Bundle(bund, listOfCachedVersions.Last().ToString()));
                 }
             }
