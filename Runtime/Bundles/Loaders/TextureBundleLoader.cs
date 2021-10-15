@@ -75,7 +75,7 @@ namespace BundlesLoader.Bundles.Loaders
                 if (asset == null)
                 {
                     Debug.LogError($"No specified asset bundle:{split[1]}");
-                    LogError(new BundleCallback(BundleErrorType.NO_BUNDLE, $"No specified asset bundle:{split[1]}", $"{split[0]}/{split[1]}"));
+                    LogError(new BundleCallback(RetrieverType.LOADER, BundleErrorType.NO_BUNDLE, $"No specified asset bundle:{split[1]}", $"{split[0]}/{split[1]}"));
                     return;
                 }
 

@@ -41,7 +41,7 @@ namespace BundlesLoader.Bundles.Loaders
                 if (asset == null)
                 {
                     Debug.LogError($"No specified asset bundle:{bundleName}");
-                    LogError(new BundleCallback(BundleErrorType.NO_BUNDLE, $"No specified asset bundle:{bundleName}", $"{bundleName}"));
+                    LogError(new BundleCallback(RetrieverType.LOADER, BundleErrorType.NO_BUNDLE, $"No specified asset bundle:{bundleName}", $"{bundleName}"));
                     return;
                 }
 

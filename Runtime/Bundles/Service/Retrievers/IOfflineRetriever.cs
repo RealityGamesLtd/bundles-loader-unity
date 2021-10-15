@@ -29,7 +29,7 @@ namespace BundlesLoader.Service.Retrievers
 
             if (Versions == null || Versions.Count == 0)
             {
-                Debug.LogError("No versions!");
+                Debug.LogError("OFFLINE PROVIDER: No versions!");
                 return;
             }
 
@@ -49,7 +49,7 @@ namespace BundlesLoader.Service.Retrievers
 
             if (Versions == null || Versions.Count == 0)
             {
-                Debug.LogError("No versions!");
+                Debug.LogError("OFFLINE PROVIDER: No versions!");
                 return;
             }
 
@@ -63,7 +63,7 @@ namespace BundlesLoader.Service.Retrievers
 
             if (bundlesTask == null)
             {
-                Debug.LogError("Tasks for  bundles are null!");
+                Debug.LogError("OFFLINE PROVIDER: Tasks for  bundles are null!");
                 return;
             }
 
@@ -88,19 +88,37 @@ namespace BundlesLoader.Service.Retrievers
             //If no cached bundles are present and we are offline (First game run)
             if (listOfCachedVersions.Count < 1)
             {
-                var fileTask = AssetBundle.LoadFromFileAsync(
-                    Path.Combine(Path.Combine(Application.streamingAssetsPath, Symbols.BUNDLES_SUBDIRECTORY), name));
-                while (!fileTask.isDone)
-                    await Task.Yield();
-
-                if (fileTask.assetBundle != null)
+                AssetBundleCreateRequest fileTask = null;
+                try
                 {
-                    loadedBundle = new Tuple<string, Bundle>(name, new Bundle(fileTask.assetBundle, string.Empty));
+                    fileTask = AssetBundle.LoadFromFileAsync(
+                        Path.Combine(Path.Combine(Application.streamingAssetsPath, Symbols.BUNDLES_SUBDIRECTORY), name));
+                }
+                catch(Exception e)
+                {
+                    Debug.LogError(e.Message);
+                }
+
+                if(fileTask == null)
+                {
+                    Debug.LogError($"Gettting file task from streaming assets is null: {name}!");
+                    loadedBundle = new Tuple<string, Bundle>(name, null);
                 }
                 else
                 {
-                    Debug.LogError($"Failed to get bundle content!");
-                    loadedBundle = new Tuple<string, Bundle>(name, null);
+                    while (!fileTask.isDone)
+                        await Task.Yield();
+
+                    if (fileTask.assetBundle != null)
+                    {
+                        Debug.Log($"OFFLINE PROVIDER: {fileTask.assetBundle.name} was loaded from streaming assets!");
+                        loadedBundle = new Tuple<string, Bundle>(name, new Bundle(fileTask.assetBundle, string.Empty));
+                    }
+                    else
+                    {
+                        Debug.LogError($"OFFLINE PROVIDER: Failed to get bundle content from streaming assets!");
+                        loadedBundle = new Tuple<string, Bundle>(name, null);
+                    }
                 }
             }
             //If there are some cached bundles present and we want to get them instead of local bundles from files (Second game run)
@@ -114,26 +132,28 @@ namespace BundlesLoader.Service.Retrievers
 
                 if (ct.IsCancellationRequested || uwr.result != UnityWebRequest.Result.Success)
                 {
-                    Debug.LogError($"Bundle {name} loading canceled due to error: {uwr.error}!");
+                    Debug.LogError($"OFFLINE PROVIDER: Bundle {name} loading canceled due to error: {uwr.error}!");
                     BundleLoadedCallback?.Invoke(
-                        new BundleCallback(BundleErrorType.FAILED, $"Bundle {name} getting error:{uwr.error}!", name));
+                        new BundleCallback(RetrieverType.OFFLINE, BundleErrorType.FAILED, $"Bundle {name} getting error:{uwr.error}!", name));
                     return new Tuple<string, Bundle>(name, null);
                 }
 
                 var bund = DownloadHandlerAssetBundle.GetContent(uwr);
                 if (bund == null)
                 {
-                    Debug.LogError($"Failed to get bundle content!");
+                    Debug.LogError($"OFFLINE PROVIDER: Failed to get bundle content!");
                     loadedBundle = new Tuple<string, Bundle>(name, null);
-                    BundleLoadedCallback?.Invoke(new BundleCallback(BundleErrorType.NULL_BUNDLE, $"{name} no bundle downloaded!", name));
+                    BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.OFFLINE, BundleErrorType.NULL_BUNDLE, $"{name} no bundle downloaded!", name));
                 }
                 else
                 {
                     var assets = bund.GetAllAssetNames();
                     if (assets == null || assets.Length == 0)
                     {
-                        BundleLoadedCallback?.Invoke(new BundleCallback(BundleErrorType.EMPTY_BUNDLE, $"{name} bundle is empty!", name));
+                        BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.OFFLINE, BundleErrorType.EMPTY_BUNDLE, $"{name} bundle is empty!", name));
                     }
+
+                    Debug.LogError($"OFFLINE PROVIDER: {name} bundle loaded from cache succesfully!");
                     loadedBundle = new Tuple<string, Bundle>(name, new Bundle(bund, listOfCachedVersions.Last().ToString()));
                 }
             }

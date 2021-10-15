@@ -29,7 +29,7 @@ namespace BundlesLoader.Service.Retrievers
 
             if (Versions == null || Versions.Count == 0)
             {
-                Debug.LogError("No versions!");
+                Debug.LogError("ONLINE PROVIDER: No versions!");
                 return;
             }
 
@@ -49,7 +49,7 @@ namespace BundlesLoader.Service.Retrievers
 
             if (Versions == null || Versions.Count == 0)
             {
-                Debug.LogError("No versions!");
+                Debug.LogError("ONLINE PROVIDER: No versions!");
                 return;
             }
 
@@ -62,7 +62,7 @@ namespace BundlesLoader.Service.Retrievers
 
             if (tasks == null)
             {
-                Debug.LogError("Tasks for  bundles are null!");
+                Debug.LogError("ONLINE PROVIDER: Tasks for  bundles are null!");
                 return;
             }
 
@@ -76,8 +76,6 @@ namespace BundlesLoader.Service.Retrievers
 
         private async Task<Tuple<string, Bundle>> RetrieveBundle(string name, string hash, CancellationToken ct)
         {
-            //Handler for new bundles from server
-
             var url = $"{ASSET_BUNDLES_URL}/" +
                 $"{PlatformDictionary.GetDirectoryByPlatform(Application.platform)}/" +
                 $"{name}";
@@ -88,12 +86,12 @@ namespace BundlesLoader.Service.Retrievers
 
             if (Caching.IsVersionCached(name, parsedHash) && IsBundleLoaded(name))
             {
-                Debug.Log($"Bundle {name} with this hash is already cached/downloaded and loaded into memory, omitting...!");
+                Debug.LogWarning($"ONLINE PROVIDER: Bundle: {name}, with this hash: {hash} is already cached/downloaded and loaded into memory, omitting...!");
                 return new Tuple<string, Bundle>(name, null);
             }
             else
             {
-                Debug.Log($"Bundle {name} no cached version founded for this hash...");
+                Debug.LogWarning($"ONLINE PROVIDER: Bundle {name} no cached version founded for this hash...");
             }
 
             using var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, parsedHash);
@@ -104,9 +102,9 @@ namespace BundlesLoader.Service.Retrievers
 
             if (ct.IsCancellationRequested || uwr.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError($"Bundle {name} getting failed due to error: {uwr.error}!");
+                Debug.LogError($"ONLINE PROVIDER: Bundle {name} getting failed due to error: {uwr.error}!");
                 BundleLoadedCallback?.Invoke(
-                    new BundleCallback(BundleErrorType.FAILED, $"Bundle {name} getting failed due to error: {uwr.error}!", name));
+                    new BundleCallback(RetrieverType.ONLINE, BundleErrorType.FAILED, $"Bundle {name} getting failed due to error: {uwr.error}!", name));
                 return new Tuple<string, Bundle>(name, null);
             }
 
@@ -117,8 +115,8 @@ namespace BundlesLoader.Service.Retrievers
             AssetBundle bundle = DownloadHandlerAssetBundle.GetContent(uwr);
             if (bundle == null)
             {
-                Debug.LogError($"Failed to get bundle content!");
-                BundleLoadedCallback?.Invoke(new BundleCallback(BundleErrorType.NULL_BUNDLE, $"{name} no bundle downloaded!", name));
+                Debug.LogError($"ONLINE PROVIDER: Failed to get bundle content!");
+                BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE, BundleErrorType.NULL_BUNDLE, $"{name} no bundle downloaded!", name));
                 return new Tuple<string, Bundle>(name, null);
             }
             else
@@ -126,8 +124,9 @@ namespace BundlesLoader.Service.Retrievers
                 var assets = bundle.GetAllAssetNames();
                 if (assets == null || assets.Length == 0)
                 {
-                    BundleLoadedCallback?.Invoke(new BundleCallback(BundleErrorType.EMPTY_BUNDLE, $"{name} bundle is empty!", name));
+                    BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE, BundleErrorType.EMPTY_BUNDLE, $"{name} bundle is empty!", name));
                 }
+                Debug.Log($"ONLINE PROVIDER: {name} bundle loaded from UWR succesfully!");
                 return new Tuple<string, Bundle>(name, new Bundle(bundle, hash));
             }
         }
@@ -167,12 +166,12 @@ namespace BundlesLoader.Service.Retrievers
                 }
                 else
                 {
-                    Debug.LogWarning($"No bundle:{name} loaded!");
+                    Debug.LogWarning($"ONLINE PROVIDER: No bundle:{name} loaded!");
                 }
             }
             else
             {
-                Debug.LogWarning("No bundles loaded!");
+                Debug.LogWarning("ONLINE PROVIDER: No bundles loaded!");
             }
         }
 
@@ -189,7 +188,7 @@ namespace BundlesLoader.Service.Retrievers
         {
             if (string.IsNullOrEmpty(name) || uwr == null)
             {
-                Debug.LogError("Name or web request is null!");
+                Debug.LogError("ONLINE PROVIDER: Name or web request is null!");
                 return;
             }
 
@@ -198,11 +197,11 @@ namespace BundlesLoader.Service.Retrievers
             {
                 if (responseHeaders == null)
                 {
-                    Debug.Log($"Bundle {name} loaded from cache!");
+                    Debug.Log($"ONLINE PROVIDER: Bundle {name} loaded from cache!");
                 }
                 else
                 {
-                    Debug.Log($"Bundle {name} version was downloaded from server");
+                    Debug.Log($"ONLINE PROVIDER: Bundle {name} version was downloaded from server");
                 }
             }
         }
