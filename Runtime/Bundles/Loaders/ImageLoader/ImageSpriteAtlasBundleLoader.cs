@@ -1,6 +1,4 @@
-using System;
 using UnityEngine;
-using UnityEngine.U2D;
 using UnityEngine.UI;
 
 namespace BundlesLoader.Bundles.Loaders.ImageLoader

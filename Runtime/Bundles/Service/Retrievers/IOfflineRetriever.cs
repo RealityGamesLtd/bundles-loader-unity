@@ -33,9 +33,9 @@ namespace BundlesLoader.Service.Retrievers
                 return;
             }
 
-            if (Versions.TryGetValue(name, out var bund))
+            if (Versions.TryGetValue(name, out var hash))
             {
-                var res = await RetrieveBundle(name, ct);
+                var res = await RetrieveBundle(name, hash, ct);
                 if (res.Item2 != null)
                 {
                     func?.Invoke(res.Item1, res.Item2);
@@ -75,7 +75,7 @@ namespace BundlesLoader.Service.Retrievers
             }
         }
 
-        private async Task<Tuple<string, Bundle>> RetrieveBundle(string name, CancellationToken ct)
+        private async Task<Tuple<string, Bundle>> RetrieveBundle(string name, string hash, CancellationToken ct)
         {
             Tuple<string, Bundle> loadedBundle;
 
@@ -94,12 +94,12 @@ namespace BundlesLoader.Service.Retrievers
                     fileTask = AssetBundle.LoadFromFileAsync(
                         Path.Combine(Path.Combine(Application.streamingAssetsPath, Symbols.BUNDLES_SUBDIRECTORY), name));
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Debug.LogError(e.Message);
                 }
 
-                if(fileTask == null)
+                if (fileTask == null)
                 {
                     Debug.LogError($"Gettting file task from streaming assets is null: {name}!");
                     loadedBundle = new Tuple<string, Bundle>(name, null);
@@ -109,14 +109,16 @@ namespace BundlesLoader.Service.Retrievers
                     while (!fileTask.isDone)
                         await Task.Yield();
 
-                    if (fileTask.assetBundle != null)
+                    var bundle = fileTask.assetBundle;
+
+                    if (bundle != null)
                     {
-                        Debug.Log($"OFFLINE PROVIDER: {fileTask.assetBundle.name} was loaded from streaming assets!");
-                        loadedBundle = new Tuple<string, Bundle>(name, new Bundle(fileTask.assetBundle, string.Empty));
+                        var res = await LoadAssets(bundle);
+                        loadedBundle = new Tuple<string, Bundle>(name, new Bundle(res, name, hash));
                     }
                     else
                     {
-                        Debug.LogError($"OFFLINE PROVIDER: Failed to get bundle content from streaming assets!");
+                        Debug.LogError($"OFFLINE PROVIDER: Failed to get bundle: {name} content from streaming assets!");
                         loadedBundle = new Tuple<string, Bundle>(name, null);
                     }
                 }
@@ -124,6 +126,7 @@ namespace BundlesLoader.Service.Retrievers
             //If there are some cached bundles present and we want to get them instead of local bundles from files (Second game run)
             else
             {
+                var parsedHash = listOfCachedVersions.Last();
                 var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, listOfCachedVersions.Last());
                 uwr.SendWebRequest();
 
@@ -138,26 +141,62 @@ namespace BundlesLoader.Service.Retrievers
                     return new Tuple<string, Bundle>(name, null);
                 }
 
-                var bund = DownloadHandlerAssetBundle.GetContent(uwr);
-                if (bund == null)
+                if (!CheckForDirectory(name, parsedHash))
                 {
-                    Debug.LogError($"OFFLINE PROVIDER: Failed to get bundle content!");
+                    var handlerError = !string.IsNullOrEmpty(uwr.downloadHandler.error) ? $"Message: {uwr.downloadHandler.error}" : string.Empty;
+                    Debug.LogError($"OFFLINE PROVIDER: Failed to get bundle: {name}, directory to read from doesn't exist!" + handlerError);
+                    BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE,
+                        BundleErrorType.FAILED, $"Bundle: {name} - failed to get bundle content, directory to read from doesn't exist!", name));
+                    return new Tuple<string, Bundle>(name, null);
+                }
+
+                UnloadCurrentBundle(name);
+
+                var bundle = DownloadHandlerAssetBundle.GetContent(uwr);
+                if (bundle == null)
+                {
+                    Debug.LogError($"OFFLINE PROVIDER: Failed to get bundle: {name} content due to content is null!");
                     loadedBundle = new Tuple<string, Bundle>(name, null);
                     BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.OFFLINE, BundleErrorType.NULL_BUNDLE, $"{name} no bundle downloaded!", name));
                 }
                 else
                 {
-                    var assets = bund.GetAllAssetNames();
+                    var assets = bundle.GetAllAssetNames();
                     if (assets == null || assets.Length == 0)
                     {
+                        Debug.LogError($"OFFLINE PROVIDER: Bundle: {name}, is empty!");
                         BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.OFFLINE, BundleErrorType.EMPTY_BUNDLE, $"{name} bundle is empty!", name));
+                        return new Tuple<string, Bundle>(name, null);
                     }
 
-                    Debug.Log($"OFFLINE PROVIDER: {name} bundle loaded from cache succesfully!");
-                    loadedBundle = new Tuple<string, Bundle>(name, new Bundle(bund, listOfCachedVersions.Last().ToString()));
+                    var res = await LoadAssets(bundle);
+                    loadedBundle = new Tuple<string, Bundle>(name, new Bundle(res, name, listOfCachedVersions.ToString()));
                 }
             }
             return loadedBundle;
+        }
+
+        private void UnloadCurrentBundle(string name)
+        {
+            var bundles = AssetBundle.GetAllLoadedAssetBundles().ToList();
+            if (bundles != null && bundles.Count > 0)
+            {
+                var loadedBundle = bundles.Find(x => x.name.Equals(name));
+                if (loadedBundle != null)
+                {
+                    loadedBundle.Unload(true);
+                }
+            }
+        }
+
+        private bool CheckForDirectory(string name, Hash128 parsedHash)
+        {
+            var path = Path.Combine(Path.Combine(Caching.currentCacheForWriting.path, name), parsedHash.ToString());
+            if (!Directory.Exists(path))
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

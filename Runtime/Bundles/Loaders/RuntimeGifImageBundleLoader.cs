@@ -1,6 +1,8 @@
 using BundlesLoader.Callbacks;
 using BundlesLoader.Gif;
+using BundlesLoader.Service;
 using UnityEngine;
+using Utils;
 
 namespace BundlesLoader.Bundles.Loaders
 {
@@ -16,50 +18,76 @@ namespace BundlesLoader.Bundles.Loaders
 
         public void Initialize(string bundleName, string assetName)
         {
+            bundleType.FullName = $"{Symbols.BUNDLES_SUBDIRECTORY}/{bundleName}/{assetName}";
+
+            if (!IsValidAssetsService())
+            {
+                return;
+            }
+
             var assetsService = AssetsServiceLoader.AssetsService;
-            if (assetsService == null)
-            {
-                Debug.LogError("Asset Service is not loaded!");
-                return;
-            }
-
-            if (assetsService.Bundles == null)
-            {
-                Debug.LogError("Asset Bundles not loaded!");
-                return;
-            }
-
-            if (bundleType == null || bundleType.FullName == null)
-            {
-                Debug.LogError("Bundle type not loaded!");
-                return;
-            }
-
             if (assetsService.Bundles.TryGetValue(bundleName, out var bundle))
             {
-                var asset = bundle.Asset;
-                if (asset == null)
-                {
-                    Debug.LogError($"No specified asset bundle:{bundleName}");
-                    LogError(new BundleCallback(RetrieverType.LOADER, BundleErrorType.NO_BUNDLE, $"No specified asset bundle:{bundleName}", $"{bundleName}"));
-                    return;
-                }
+                bundle.OnAssetsChanged += OnAssetsChanged;
+                SetCurrentAsset(bundleType.FullName.Split('/'), bundle);
 
-                var gifAsset = asset.LoadAsset<TextAsset>(assetName);
-                if (gifAsset == null)
-                {
-                    Debug.LogError($"Bundle:{bundleName} -> no gif:{assetName}");
-                    LogError(new AssetCallback(AssetErrorType.NULL_GIF, $"Bundle:{bundleName} -> no gif:{assetName}",
-                        bundleName, assetName));
-                    return;
-                }
-
-                gifImage.Load(gifAsset.bytes);
             }
             else
             {
                 Debug.LogError($"No bundle with name: {bundleName}");
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (!IsValidAssetsService())
+            {
+                return;
+            }
+
+            var assetsService = AssetsServiceLoader.AssetsService;
+
+            var split = bundleType.FullName?.Split('/');
+            if (split.Length != 3)
+            {
+                Debug.LogError($"Wrong format: {bundleType.FullName} !");
+                return;
+            }
+
+            if (assetsService.Bundles.TryGetValue(split[1], out var bundle))
+            {
+                bundle.OnAssetsChanged -= OnAssetsChanged;
+            }
+            else
+            {
+                Debug.LogError($"No bundle with name: {split[1]}");
+            }
+        }
+
+        public void SetCurrentAsset(string[] split, Bundle bundle)
+        {
+            var gifAsset = bundle.LoadAsset<TextAsset>(split[2]);
+            if (gifAsset == null)
+            {
+                Debug.LogError($"Bundle:{split[0]}/{split[1]} -> no gif:{split[2]}");
+                LogError(new AssetCallback(AssetErrorType.NULL_GIF, $"Bundle:{split[0]}/{split[1]} -> no gif:{split[2]}",
+                    $"{split[0]}/{split[1]}", split[2]));
+                return;
+            }
+
+            gifImage.Load(gifAsset.bytes);
+        }
+
+        public void OnAssetsChanged(Bundle currentBundle)
+        {
+            var split = bundleType.FullName?.Split('/');
+            if (split.Length != 3)
+            {
+                Debug.LogError($"Wrong format: {bundleType.FullName} !");
+                return;
+            }
+
+            SetCurrentAsset(split, currentBundle);
         }
     }
 }
