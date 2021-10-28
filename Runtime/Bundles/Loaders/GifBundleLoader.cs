@@ -1,11 +1,12 @@
 using BundlesLoader.Callbacks;
 using BundlesLoader.Gif;
+using BundlesLoader.Service;
 using UnityEngine;
 
 namespace BundlesLoader.Bundles.Loaders
 {
     [RequireComponent(typeof(GifImage))]
-    public class GifBundleLoader : BundleLoader
+    public class GifBundleLoader : BundleLoader, IRefreshable
     {
         private GifImage gifImage;
 
@@ -17,24 +18,12 @@ namespace BundlesLoader.Bundles.Loaders
 
         public void Initialize()
         {
+            if(!IsValidAssetsService())
+            {
+                return;
+            }
+
             var assetsService = AssetsServiceLoader.AssetsService;
-            if(assetsService == null)
-            {
-                Debug.LogError("Asset Service is not loaded!");
-                return;
-            }
-
-            if (assetsService.Bundles == null)
-            {
-                Debug.LogError("Asset Bundles not loaded!");
-                return;
-            }
-
-            if (bundleType == null || bundleType.FullName == null)
-            {
-                Debug.LogError("Bundle type not loaded!");
-                return;
-            }
 
             var split = bundleType.FullName?.Split('/');
             if (split.Length != 3)
@@ -45,29 +34,65 @@ namespace BundlesLoader.Bundles.Loaders
 
             if (assetsService.Bundles.TryGetValue(split[1], out var bundle))
             {
-                var asset = bundle.Asset;
-                if (asset == null)
-                {
-                    Debug.LogError($"No specified asset bundle:{split[1]}");
-                    LogError(new BundleCallback(RetrieverType.LOADER, BundleErrorType.NO_BUNDLE, $"No specified asset bundle:{split[1]}", $"{split[0]}/{split[1]}"));
-                    return;
-                }
-
-                var gifAsset = asset.LoadAsset<TextAsset>(split[2]);
-                if (gifAsset == null)
-                {
-                    Debug.LogError($"Bundle:{split[0]}/{split[1]} -> no gif:{split[2]}");
-                    LogError(new AssetCallback(AssetErrorType.NULL_GIF, $"Bundle:{split[0]}/{split[1]} -> no gif:{split[2]}",
-                        $"{split[0]}/{split[1]}", split[2]));
-                    return;
-                }
-
-                gifImage.Load(gifAsset.bytes);
+                bundle.OnAssetsChanged += OnAssetsChanged;
+                SetCurrentAsset(split, bundle);
             }
             else
             {
                 Debug.LogError($"No bundle with name: {split[1]}");
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (!IsValidAssetsService())
+            {
+                return;
+            }
+
+            var assetsService = AssetsServiceLoader.AssetsService;
+
+            var split = bundleType.FullName?.Split('/');
+            if (split.Length != 3)
+            {
+                Debug.LogError($"Wrong format: {bundleType.FullName} !");
+                return;
+            }
+
+            if (assetsService.Bundles.TryGetValue(split[1], out var bundle))
+            {
+                bundle.OnAssetsChanged -= OnAssetsChanged;
+            }
+            else
+            {
+                Debug.LogError($"No bundle with name: {split[1]}");
+            }
+        }
+
+        public void SetCurrentAsset(string[] split, Bundle bundle)
+        {
+            var gifAsset = bundle.LoadAsset<TextAsset>(split[2]);
+            if (gifAsset == null)
+            {
+                Debug.LogError($"Bundle:{split[0]}/{split[1]} -> no gif:{split[2]}");
+                LogError(new AssetCallback(AssetErrorType.NULL_GIF, $"Bundle:{split[0]}/{split[1]} -> no gif:{split[2]}",
+                    $"{split[0]}/{split[1]}", split[2]));
+                return;
+            }
+
+            gifImage.Load(gifAsset.bytes);
+        }
+
+        public void OnAssetsChanged(Bundle currentBundle)
+        {
+            var split = bundleType.FullName?.Split('/');
+            if (split.Length != 3)
+            {
+                Debug.LogError($"Wrong format: {bundleType.FullName} !");
+                return;
+            }
+
+            SetCurrentAsset(split, currentBundle);
         }
     }
 }

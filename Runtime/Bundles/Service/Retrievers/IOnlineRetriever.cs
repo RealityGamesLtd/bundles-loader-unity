@@ -6,12 +6,14 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System;
 using BundlesLoader.Callbacks;
+using System.IO;
+using Utils;
 
 namespace BundlesLoader.Service.Retrievers
 {
     public class IOnlineRetriever : Retriever, IBundleRetriever
     {
-        private const int CACHE_COUNT_MAX = 2;
+        private const int CACHE_COUNT_MAX = 1;
 
         public Action<float> ProgressCallback { get; private set; }
         public Action<IEntityCallback> BundleLoadedCallback { get; set; }
@@ -84,10 +86,15 @@ namespace BundlesLoader.Service.Retrievers
             Caching.GetCachedVersions(name, versions);
             var parsedHash = Hash128.Parse(hash);
 
-            if (Caching.IsVersionCached(name, parsedHash) && IsBundleLoaded(name))
+            if (Caching.IsVersionCached(name, parsedHash))
             {
-                Debug.LogWarning($"ONLINE PROVIDER: Bundle: {name}, with this hash: {hash} is already cached/downloaded and loaded into memory, omitting...!");
-                return new Tuple<string, Bundle>(name, null);
+                Debug.LogWarning($"ONLINE PROVIDER: Bundle: {name}, with this hash: {hash} is already cached");
+
+                if (IsBundleLoadedWithSameCache(name))
+                {
+                    Debug.LogWarning($"ONLINE PROVIDER: Bundle: {name}, with this hash: {hash} is already loaded, omitting!");
+                    return new Tuple<string, Bundle>(name, null);
+                }
             }
             else
             {
@@ -108,80 +115,107 @@ namespace BundlesLoader.Service.Retrievers
                 return new Tuple<string, Bundle>(name, null);
             }
 
-            UpdateCachedVersions(name);
-            LogRequestResponseStatus(name, uwr);
-            UnloadRedundantAsset(name);
+            if (!CheckForDirectory(name, parsedHash))
+            {
+                var handlerError = !string.IsNullOrEmpty(uwr.downloadHandler.error) ? $"Message: {uwr.downloadHandler.error}" : string.Empty;
+                Debug.LogError($"ONLINE PROVIDER: Failed to get bundle: {name}, directory to read from doesn't exist!" + handlerError);
+                BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE,
+                    BundleErrorType.FAILED, $"Bundle: {name} - failed to get bundle content, directory to read from doesn't exist!", name));
+                return new Tuple<string, Bundle>(name, null);
+            }
+
+            UnloadCurrentBundle(name);
+            RemoveCurrentBundleFromCache(name, parsedHash);
 
             AssetBundle bundle = DownloadHandlerAssetBundle.GetContent(uwr);
             if (bundle == null)
             {
-                Debug.LogError($"ONLINE PROVIDER: Failed to get bundle content!");
+                Debug.LogError($"ONLINE PROVIDER: Failed to get bundle: {name}, due to bundle is null!" +
+                     $"Message: {uwr.downloadHandler.error}");
                 BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE, BundleErrorType.NULL_BUNDLE, $"{name} no bundle downloaded!", name));
                 return new Tuple<string, Bundle>(name, null);
             }
             else
             {
+                LogRequestResponseStatus(name, uwr);
+
                 var assets = bundle.GetAllAssetNames();
                 if (assets == null || assets.Length == 0)
                 {
+                    Debug.LogError($"ONLINE PROVIDER: Bundle: {name}, is empty!");
                     BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE, BundleErrorType.EMPTY_BUNDLE, $"{name} bundle is empty!", name));
+                    return new Tuple<string, Bundle>(name, null);
                 }
-                Debug.Log($"ONLINE PROVIDER: {name} bundle loaded from UWR succesfully!");
-                return new Tuple<string, Bundle>(name, new Bundle(bundle, hash));
+
+                var res = await LoadAssets(bundle);
+                return new Tuple<string, Bundle>(name, new Bundle(res, name, hash));
             }
         }
 
-        private bool IsBundleLoaded(string name)
+        private bool IsBundleLoadedWithSameCache(string name)
         {
-            var loadedBundles = AssetBundle.GetAllLoadedAssetBundles();
-            if (loadedBundles != null)
+            var bundles = AssetBundle.GetAllLoadedAssetBundles().ToList();
+            if (bundles != null && bundles.Count > 0)
             {
-                var list = loadedBundles.ToList();
-                var loadedBundle = list.Find(x => x.name.Equals(name));
+                var loadedBundle = bundles.Find(x => x.name.Equals(name));
                 if (loadedBundle != null)
                 {
                     return true;
                 }
-                else
+            }
+
+            return false;
+        }
+
+        private void UnloadCurrentBundle(string name)
+        {
+            var bundles = AssetBundle.GetAllLoadedAssetBundles().ToList();
+            if(bundles != null && bundles.Count > 0)
+            {
+                var loadedBundle = bundles.Find(x => x.name.Equals(name));
+                if (loadedBundle != null)
                 {
-                    return false;
+                    loadedBundle.Unload(true);
                 }
             }
-            else
+        }
+
+        private bool CheckForDirectory(string name, Hash128 parsedHash)
+        {
+            var path = Path.Combine(Path.Combine(Caching.currentCacheForWriting.path, name), parsedHash.ToString());
+            if (!Directory.Exists(path))
             {
                 return false;
             }
+            return true;
         }
 
-        private void UnloadRedundantAsset(string name)
-        {
-            var loadedBundles = AssetBundle.GetAllLoadedAssetBundles();
-            if (loadedBundles != null)
-            {
-                var list = loadedBundles.ToList();
-                var loadedBundle = list.Find(x => x.name.Equals(name));
-                if (loadedBundle != null)
-                {
-                    loadedBundle.Unload(false);
-                }
-                else
-                {
-                    Debug.LogWarning($"ONLINE PROVIDER: No bundle:{name} loaded!");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("ONLINE PROVIDER: No bundles loaded!");
-            }
-        }
-
-        private void UpdateCachedVersions(string name)
+        private void RemoveCurrentBundleFromCache(string name, Hash128 parsedHash)
         {
             var versions = new List<Hash128>();
             Caching.GetCachedVersions(name, versions);
-
             if (versions.Count > CACHE_COUNT_MAX)
-                Caching.ClearCachedVersion(name, versions.First());
+            {
+                var versionToDelete = versions.FindAll(x => !x.Equals(parsedHash));
+                if (versionToDelete != null)
+                {
+                    var flags = versionToDelete.Select(x => Caching.ClearCachedVersion(name, x)).ToList();
+                    if (flags.Contains(false))
+                        Debug.LogError($"ONLINE PROVIDER: Clearing: {name} failed!");
+                }
+            }
+
+            versions.Clear();
+            Caching.GetCachedVersions(name, versions);
+            if (versions.Count == CACHE_COUNT_MAX)
+            {
+                var first = versions.First();
+                if (first != null)
+                {
+                    if (!first.Equals(parsedHash))
+                        Debug.LogError($"ONLINE PROVIDER: Clearing: {name} wrong hash was cached!");
+                }
+            }
         }
 
         private void LogRequestResponseStatus(string name, UnityWebRequest uwr)

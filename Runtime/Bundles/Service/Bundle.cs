@@ -1,27 +1,50 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using System.IO;
 
 namespace BundlesLoader.Service
 {
     public class Bundle
     {
-        public AssetBundle Asset { get; private set; }
+        public List<Object> Assets { get; private set; }
+        public string Name { get; private set; }
         public string Hash { get; private set; }
+        public System.Action<Bundle> OnAssetsChanged { get; set; }
 
-        public Bundle(AssetBundle asset)
+        public Bundle(Object[] assets, string name, string hash)
         {
-            Asset = asset;
-            Hash = string.Empty;
+            Assets = assets.ToList();
+            Name = name;
+            Hash = hash;
         }
 
-        public Bundle(AssetBundle asset, string hash)
+        public void Update(List<Object> objects, string hash)
         {
-            Asset = asset;
+            Assets = objects;
             Hash = hash;
+
+            OnAssetsChanged?.Invoke(this);
         }
 
         public override string ToString()
         {
-            return $"{Asset.name}, hash: {Hash}";
+            return $"{Name}, hash: {Hash}";
+        }
+
+        public T LoadAsset<T>(string assetName) where T : Object
+        {
+            var name = Path.GetFileNameWithoutExtension(assetName);
+            if (!string.IsNullOrEmpty(name))
+            {
+                var asset = Assets.Find(x => x is T && x.name.Equals(name));
+                if (asset != null)
+                {
+                    return asset as T;
+                }
+            }
+
+            return null;
         }
     }
 }
