@@ -12,69 +12,111 @@ namespace BundlesLoader.Bundles.Loaders
     {
         protected abstract void SetSprite(Sprite sprite);
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bundleName"></param>
+        /// <param name="spriteName"></param>
+        /// <returns>True if sprite was found and loaded, false otherwise.</returns>
         [Obsolete("Use LoadSprite(AssetType) instead")]
-        public void LoadSprite(string bundleName, string spriteName)
+        public bool LoadSprite(string bundleName, string spriteName)
         {
             bundleType.FullName = $"{Symbols.BUNDLES_SUBDIRECTORY}/{bundleName}/{spriteName}";
 
             if (!IsValidAssetsService())
             {
-                return;
+                return false;
             }
 
             var bundle = AssetRetriever.GetBundle(bundleName);
             if (bundle != null)
                 bundle.OnAssetsChanged += OnAssetChanged;
             SetStandaloneTexture(bundleType.FullName.Split('/'), bundle);
+
+            return true;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bundleName"></param>
+        /// <param name="atlasName"></param>
+        /// <param name="spriteName"></param>
+        /// <returns>True if sprite was found and loaded, false otherwise.</returns>
         [Obsolete("Use LoadSprite(AssetType) instead")]
-        public void LoadSprite(string bundleName, string atlasName, string spriteName)
+        public bool LoadSprite(string bundleName, string atlasName, string spriteName)
         {
             bundleType.FullName = $"{Symbols.BUNDLES_SUBDIRECTORY}/{bundleName}/{atlasName}/{spriteName}";
 
             if (!IsValidAssetsService())
             {
-                return;
+                return false;
             }
 
             var bundle = AssetRetriever.GetBundle(bundleName);
-            if (bundle != null)
-                bundle.OnAssetsChanged += OnAssetChanged;
+
+            if (bundle == null)
+            {
+                Debug.LogError($"Could not get bundle {bundleName}, will not load sprite");
+                return false;
+            }
+
+            bundle.OnAssetsChanged += OnAssetChanged;
             SetSpriteAtlasTexture(bundleType.FullName.Split('/'), bundle);
+
+            return true;
         }
 
-        public void LoadSprite(AssetType assetType)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="assetType"></param>
+        /// <returns>True if sprite was found and loaded, false otherwise.</returns>
+        public bool LoadSprite(AssetType assetType)
         {
-            bundleType.FullName = assetType.FullName;
+            bundleType.FullName = assetType.FullPath;
 
             if (!IsValidAssetsService())
             {
-                return;
+                return false;
             }
 
             var bundle = AssetRetriever.GetBundle(assetType);
-            if(bundle != null)
-                bundle.OnAssetsChanged += OnAssetChanged;
+
+            if (bundle == null)
+            {
+                Debug.LogError($"Could not get bundle with path {assetType.FullPath}, will not load sprite");
+                return false;
+            }
+
+            bundle.OnAssetsChanged += OnAssetChanged;
 
             var split = bundleType.FullName.Split('/');
             if (split.Length == 4)
             {
                 SetSpriteAtlasTexture(split, bundle);
             }
-            else if(split.Length == 3)
+            else if (split.Length == 3)
             {
                 SetStandaloneTexture(split, bundle);
             }
             else
             {
                 Debug.LogError($"Wrong format: {assetType}!");
-                return;
+                return false;
             }
+
+            return true;
         }
 
         private void SetStandaloneTexture(string[] split, Bundle bundle)
         {
+            if (bundle == null)
+            {
+                Debug.LogError($"Could not set sprite atlas texture, bundle provided was NULL");
+                return;
+            }
+
             var texture = bundle.LoadAsset<Texture2D>(split[2]);
             var sprite = bundle.LoadAsset<Sprite>(split[2]);
             if (texture == null && sprite == null)
@@ -93,6 +135,12 @@ namespace BundlesLoader.Bundles.Loaders
 
         private void SetSpriteAtlasTexture(string[] split, Bundle bundle)
         {
+            if (bundle == null)
+            {
+                Debug.LogError($"Could not set sprite atlas texture, bundle provided was NULL");
+                return;
+            }
+
             var atlas = bundle.LoadAsset<SpriteAtlas>(split[2]);
             if (atlas == null)
             {
@@ -125,14 +173,26 @@ namespace BundlesLoader.Bundles.Loaders
             if (split.Length == 4)
             {
                 var bundle = AssetRetriever.GetBundle(split[1]);
-                if(bundle != null)
-                    bundle.OnAssetsChanged -= OnAssetChanged;
+
+                if (bundle == null)
+                {
+                    Debug.LogError($"Could not get bundle with path {split[1]}, will not load sprite");
+                    return;
+                }
+
+                bundle.OnAssetsChanged -= OnAssetChanged;
             }
             else if (split.Length == 3)
             {
                 var bundle = AssetRetriever.GetBundle(split[1]);
-                if (bundle != null)
-                    bundle.OnAssetsChanged -= OnAssetChanged;
+
+                if (bundle == null)
+                {
+                    Debug.LogError($"Could not get bundle with path {split[1]}, will not load sprite");
+                    return;
+                }
+
+                bundle.OnAssetsChanged -= OnAssetChanged;
             }
             else
             {
