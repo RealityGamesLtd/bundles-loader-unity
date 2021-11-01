@@ -6,18 +6,23 @@ namespace BundlesLoader.Bundles.Core
     public class AssetType
     {
         [HideInInspector]
-        public string FullName;
+        public string FullPath;
+
+        public AssetType(IPathComponents pathComponents)
+        {
+            FullPath = pathComponents.FullPath;
+        }
 
         public IPathComponents GetPathComponents()
         {
-            if (AssetPathComponents.IsValidPath(FullName)) return new AssetPathComponents(FullName);
-            if (SpriteAtlasAssetPathComponents.IsValidPath(FullName)) return new SpriteAtlasAssetPathComponents(FullName);
+            if (AssetPathComponents.IsValidPath(FullPath)) return new AssetPathComponents(FullPath);
+            if (SpriteAtlasAssetPathComponents.IsValidPath(FullPath)) return new SpriteAtlasAssetPathComponents(FullPath);
             return null;
         }
 
         public override string ToString()
         {
-            return FullName;
+            return FullPath;
         }
     }
 
@@ -25,6 +30,7 @@ namespace BundlesLoader.Bundles.Core
     {
         string BundleName { get; }
         string AssetName { get; }
+        string FullPath { get; }
     }
 
     /// <summary>
@@ -35,6 +41,7 @@ namespace BundlesLoader.Bundles.Core
         public string BundleName { get; set; }
         public string SpriteAtlasName { get; set; }
         public string AssetName { get; set; }
+        public string FullPath { get; private set; }
 
         public SpriteAtlasAssetPathComponents(string path) : this()
         {
@@ -45,6 +52,23 @@ namespace BundlesLoader.Bundles.Core
             BundleName = splitString[1];
             SpriteAtlasName = splitString[2];
             AssetName = splitString[3];
+
+            FullPath = path;
+        }
+
+        public SpriteAtlasAssetPathComponents(string bundleName, string spriteAtlasName, string assetName) : this()
+        {
+            var path = $"Bundles/{bundleName}/{spriteAtlasName}.spriteatlas/{assetName}";
+
+            if (IsValidPath(path) == false) return;
+
+            var splitString = path.Split('/');
+
+            BundleName = splitString[1];
+            SpriteAtlasName = splitString[2];
+            AssetName = splitString[3];
+
+            FullPath = path;
         }
 
         public static bool IsValidPath(string path)
@@ -63,6 +87,7 @@ namespace BundlesLoader.Bundles.Core
     {
         public string BundleName { get; set; }
         public string AssetName { get; set; }
+        public string FullPath { get; private set; }
 
         public AssetPathComponents(string path) : this()
         {
@@ -72,6 +97,8 @@ namespace BundlesLoader.Bundles.Core
 
             BundleName = splitString[1];
             AssetName = splitString[2];
+
+            FullPath = path;
         }
 
         public static bool IsValidPath(string path)

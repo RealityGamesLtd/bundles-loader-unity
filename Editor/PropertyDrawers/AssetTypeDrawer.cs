@@ -33,11 +33,11 @@ namespace BundlesLoader.PropertyDrawers
             {
                 if (field.GetValue(targetObject) is AssetType value)
                 {
-                    Set(value.FullName);
+                    Set(value.FullPath);
                     index = EditorGUI.Popup(position, property.propertyPath, index, names.ToArray());
-                    if (index != -1  && index < names.Count && names[index] != value.FullName)
+                    if (index != -1  && index < names.Count && names[index] != value.FullPath)
                     {
-                        value.FullName = names[index];
+                        value.FullPath = names[index];
                         EditorUtility.SetDirty(targetObject);
                     }
                 }
