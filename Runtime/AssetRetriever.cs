@@ -2,7 +2,6 @@ using BundlesLoader.Bundles.Core;
 using BundlesLoader.Service;
 using System;
 using UnityEngine;
-using UnityEngine.U2D;
 
 namespace BundlesLoader
 {
@@ -51,29 +50,6 @@ namespace BundlesLoader
             }
 
             return bundle;
-        }
-
-        public static Sprite GetSprite(AssetType assetType)
-        {
-            var assetsService = AssetsServiceLoader.AssetsService;
-            if (assetsService == null) return null;
-
-            var pathComponents = assetType.GetPathComponents();
-
-            var bundle = GetBundle(assetType);
-
-            switch (pathComponents)
-            {
-                case SpriteAtlasAssetPathComponents spriteAtlasAsset:
-                    var atlas = bundle.LoadAsset<SpriteAtlas>(spriteAtlasAsset.SpriteAtlasName);
-                    if (atlas != null) return atlas.GetSprite(spriteAtlasAsset.AssetName);
-                    return null;
-                case AssetPathComponents asset:
-                    return bundle.LoadAsset<Sprite>(asset.AssetName);
-                default:
-                    Debug.LogError($"Unsupported path components type");
-                    return null;
-            }
         }
     }
 }
