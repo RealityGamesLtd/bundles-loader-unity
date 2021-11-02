@@ -17,19 +17,19 @@ namespace BundlesLoader.Bundles.Loaders
             var assetsService = AssetsServiceLoader.AssetsService;
             if (assetsService == null)
             {
-                Debug.LogError("Asset Service is not loaded!");
+                Debug.LogError("Asset Service is not loaded!", gameObject);
                 return false;
             }
 
             if (assetsService.Bundles == null)
             {
-                Debug.LogError("Asset Bundles not loaded!");
+                Debug.LogError("Asset Bundles not loaded!", gameObject);
                 return false;
             }
 
             if (bundleType == null || string.IsNullOrEmpty(bundleType.FullName))
             {
-                Debug.LogError("Bundle type not loaded!");
+                Debug.LogError("Bundle type not loaded!", gameObject);
                 return false;
             }
 

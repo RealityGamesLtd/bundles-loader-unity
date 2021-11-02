@@ -132,8 +132,12 @@ namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader.Window
             {
                 currentIndex = 0;
                 finalCount = 1;
-                await Task.WhenAny(StartProgress("Asset Downloader", "Downloading assets..."), DownloadAssets());
+                var downloadTask = DownloadAssets();
+                var progressBarTask = StartProgress("Asset Downloader", "Downloading assets...");
+                await Task.WhenAny(progressBarTask, downloadTask);
                 Debug.Log("DONE DOWNLOADING!");
+                if (downloadTask.IsFaulted) Debug.LogError($"Download task has failed!: {downloadTask.Status} ({downloadTask.Exception})");
+                EditorUtility.ClearProgressBar();
             });
 
             DrawPreview();
@@ -212,6 +216,12 @@ namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader.Window
 
         private async Task DownloadAssets()
         {
+            if (driveService == null)
+            {
+                Debug.LogError($"drive service has not been initialized! Close and open the Sprite Downloader window and try again");
+                return;
+            }
+
             var parentFolder = await driveService.Files.Get(driveFolderID).ExecuteAsync();
             var folderName = parentFolder.Name;
 
@@ -220,39 +230,24 @@ namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader.Window
             var res = await listRequest.ExecuteAsync();
             var folders = res.Files.ToArray();
 
-            List<Task<(byte[], string FolderName, string Name)>> tasks = new List<Task<(byte[], string FolderName, string Name)>>();
+            var resp = new List<(byte[], string FolderName, string Name)>();
+
+            finalCount = folders.Length;
 
             if (folders.Length <= 0)
             {
                 Debug.LogWarning($"No folders in this directory: {folderName}, getting spritsheet from this directory!");
-                tasks.AddRange(GetFilesFromFolder(parentFolder, folderName));
+                resp.AddRange(await GetFilesFromFolder(parentFolder, folderName));
+                currentIndex++;
             }
             else
             {
                 for (int i = 0; i < folders.Length; ++i)
                 {
                     var subFolderName = folders[i].Name;
-                    tasks.AddRange(GetFilesFromFolder(folders[i], subFolderName));
-                }
-            }
-
-            finalCount = tasks.Count;
-
-            List<(byte[] Bytes, string FolderName, string Name)> resp = new List<(byte[] Bytes, string FolderName, string Name)>();
-
-            try
-            {
-                foreach(var task in tasks)
-                {
-                    resp.Add(await task);
-                    await Task.Yield();
+                    resp.AddRange(await GetFilesFromFolder(folders[i], subFolderName));
                     currentIndex++;
                 }
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e.Message);
-                processingPacks = null;
             }
 
             if (resp.Count == 0)
@@ -269,24 +264,50 @@ namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader.Window
             isProgressing = false;
         }
 
-        private IEnumerable<Task<(byte[], string FolderName, string Name)>> GetFilesFromFolder(
+        private async Task<IEnumerable<(byte[], string FolderName, string Name)>> GetFilesFromFolder(
             Google.Apis.Drive.v3.Data.File folder, string subFolderName)
         {
-            var listRequest = driveService.Files.List();
-            listRequest.Q = $"('{folder.Id}' in parents)";
-            var files = listRequest.Execute().Files.ToArray();
-            if (files.Length <= 0)
+            Debug.Log($"Getting files from {folder.Name}/{subFolderName}...");
+
+            var files = new List<Google.Apis.Drive.v3.Data.File>();
+            Google.Apis.Drive.v3.Data.FileList execute = null;
+
+            while (true)
+            {
+                if (execute != null && string.IsNullOrWhiteSpace(execute.NextPageToken))
+                    break;
+
+                var listRequest = driveService.Files.List();
+                listRequest.Q = $"('{folder.Id}' in parents)";
+                listRequest.Fields = "nextPageToken, files(id, name)";
+                if (execute != null) listRequest.PageToken = execute.NextPageToken;
+                execute = listRequest.Execute();
+
+                if (execute.Files != null) foreach (var f in execute.Files) files.Add(f);
+            }
+
+            if (files.Count <= 0)
             {
                 Debug.LogWarning($"No files in this directory: {subFolderName}, omitting this directory!");
             }
+            else Debug.Log($"There are {files.Count} files in {folder.Name}/{subFolderName}");
 
-            var ret = files.Select(async x =>
+            var ret = new List<(byte[], string FolderName, string Name)>();
+
+            const int CONCURRENT_DOWNLOADS_COUNT = 10;
+            for (int i = 0; i < files.Count; i += CONCURRENT_DOWNLOADS_COUNT)
             {
-                var task = driveService.Files.Get(x.Id);
-                using MemoryStream ms = new MemoryStream();
-                await task.DownloadAsync(ms);
-                return (ms.GetBuffer(), $"{subFolderName}", $"{x.Name}");
-            });
+                var fileDownloads = await Task.WhenAll(files.Skip(i).Take(CONCURRENT_DOWNLOADS_COUNT).Select(async file =>
+                {
+                    var task = driveService.Files.Get(file.Id);
+                    using MemoryStream ms = new MemoryStream();
+                    await task.DownloadAsync(ms);
+                    return (ms.GetBuffer(), $"{subFolderName}", $"{file.Name}");
+                }));
+
+                ret.AddRange(fileDownloads);
+            }
+
             return ret;
         }
 
