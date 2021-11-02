@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.0] - 2021-11-02
+- changed `public string AssetType.FullName` to `public string AssetType.FullPath for naming consistency`
+- introduced `SpriteAtlasAssetPathComponents(string bundleName, string spriteAtlasName, string assetName)` constructor to have means of encapsulating those strings better and use this class in public API instead of strings
+- `RuntimeTextureBundleLoader.LoadSprite()` method will now return true if successfully found and set the sprite, false otherwise
+- added game object as context to few `Debug.LogError()` for easier lookup of offending game object when errors appear in console
+
 ## [1.2.2] - 2021-09-22
 - Added bundle loading callback
 
