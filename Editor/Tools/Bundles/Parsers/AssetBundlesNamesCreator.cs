@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.U2D;
 using Utils;
 
-namespace BundlesLoader.EditorHelpers.Tools.Bundles
+namespace BundlesLoader.EditorHelpers.Tools.Bundles.Parsers
 {
     public static class AssetBundlesNamesCreator
     {
@@ -47,7 +47,18 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
                 root.Names.Add(basChild);
             }
 
-            return JsonConvert.SerializeObject(root, Formatting.Indented);
+            string output = string.Empty;
+
+            try
+            {
+                output = JsonConvert.SerializeObject(root, Formatting.Indented);
+            }
+            catch(System.Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
+
+            return output;
         }
 
         private static string[] GenerateNamesFromAsset(Object slctObj)

@@ -22,7 +22,11 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
         private Vector2 scrollPos;
         private bool freshBuild;
         private int index = 0;
+        private int minVersion = 0;
+        private int maxVersion = 0;
         private string[] targets;
+        private string[] versions;
+        private Versionable versionable;
 
         [MenuItem("Window/Asset Bundle Builder")]
         static void ShowWindow()
@@ -48,12 +52,23 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
             ScriptableObject target = this;
             SerializedObject so = new SerializedObject(target);
             SerializedProperty selectedContainers = so.FindProperty("selectedObjects");
-            index = EditorGUILayout.Popup(index, targets);
+            index = EditorGUILayout.Popup("Platform:", index, targets);
+            var style = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
 
-            EditorGUILayout.LabelField("Selected objects: ", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Versions", style, GUILayout.ExpandWidth(true));
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            versionable = (Versionable)EditorGUILayout.ObjectField("Versions file: ", versionable, typeof(Versionable), false);
+            if (versionable != null)
+            {
+                versions = versionable.Versions.ToArray();
+                minVersion = EditorGUILayout.Popup("Min Version:", minVersion, versions);
+                maxVersion = EditorGUILayout.Popup("Max Version:", maxVersion, versions);
+            }
+            EditorGUILayout.EndVertical();
 
+            EditorGUILayout.LabelField("Selected objects", style, GUILayout.ExpandWidth(true));
             EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-            scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.Width(392), GUILayout.Height(375));
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
 
             EditorGUILayout.PropertyField(selectedContainers, true);
 
@@ -67,9 +82,10 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
             {
                 LoadBundles();
             }
-            if (GUILayout.Button("Build"))
+            if (versionable != null && GUILayout.Button("Build"))
             {
-                if(!AssetBundleBuilder.BuildBundles(targets[index], selectedObjects, freshBuild))
+                if(!AssetBundleBuilder.BuildBundles(targets[index], selectedObjects, freshBuild,
+                    versions[minVersion], versions[maxVersion]))
                 {
                     EditorUtility.DisplayDialog("Asset Bundle Builder", "Asset Bundles are not consistent with each other!", "Ok");
                 }

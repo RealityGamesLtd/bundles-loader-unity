@@ -1,7 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
+using BundlesLoader.EditorHelpers.Tools.Bundles.Parsers;
 using UnityEditor;
 using UnityEngine;
 using Utils;
@@ -10,24 +11,7 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
 {
     public static class AssetBundleBuilder
     {
-        public static void BuildBundles(string currentTarget)
-        {
-            if (!Directory.Exists($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}"))
-            {
-                Debug.LogError("Asset Bundle directory doesn't exist! Creating directory!");
-                Directory.CreateDirectory($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}");
-            }
-
-            BuildTarget target = System.Enum.TryParse<BuildTarget>(currentTarget, out var res) ?
-                res : EditorUserBuildSettings.activeBuildTarget;
-            BuildPipeline.BuildAssetBundles($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}",
-                BuildAssetBundleOptions.None, target);
-
-            GenerateVersions(currentTarget);
-            SetUpEditorAssets(currentTarget);
-        }
-
-        public static bool BuildBundles(string currentTarget, List<Container> objects, bool freshBuild)
+        public static bool BuildBundles(string currentTarget, List<Container> objects, bool freshBuild, string minVersion, string maxVersion)
         {
             if (objects.Count <= 0)
             {
@@ -77,7 +61,7 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
                 AssetDatabase.ImportAsset(files[i], ImportAssetOptions.ForceUpdate);
             }
 
-            GenerateVersions(currentTarget);
+            GenerateVersions(currentTarget, objects, minVersion, maxVersion);
             SetUpEditorAssets(currentTarget);
 
             return GenerateNames(objects);
@@ -111,7 +95,20 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
 
         private static bool GenerateNames(List<Container> objects)
         {
-            var currentNames = File.ReadAllText($"{Symbols.ASSET_BUNDLE_PATH}/{Symbols.NAMES_FILE_NAME}");
+            string currentNames = string.Empty;
+
+            if (File.Exists($"{Symbols.ASSET_BUNDLE_PATH}/{Symbols.NAMES_FILE_NAME}"))
+            {
+                try
+                {
+                    currentNames = File.ReadAllText($"{Symbols.ASSET_BUNDLE_PATH}/{Symbols.NAMES_FILE_NAME}");
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e.Message);
+                    return false;
+                }
+            }
 
             var json = AssetBundlesNamesCreator.CreateNames(objects);
             File.WriteAllText($"{Symbols.ASSET_BUNDLE_PATH}/{Symbols.NAMES_FILE_NAME}", json);
@@ -120,41 +117,14 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
             return currentNames.Equals(json);
         }
 
-        private static void GenerateVersions(string currentTarget)
+        private static void GenerateVersions(string currentTarget, List<Container> objects, string  minVersion, string maxVersion)
         {
             var files = Directory.GetFiles($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}")
                 .Where(x => !Path.GetFileName(x).Equals(currentTarget) && string.IsNullOrEmpty(Path.GetExtension(x))).ToArray();
 
-            Dictionary<string, string> tokens = new Dictionary<string, string>();
-            for (int i = 0; i < files.Length; ++i)
-            {
-                var bytes = File.ReadAllBytes(files[i]);
-                if(!tokens.ContainsKey(files[i]))
-                {
-                    tokens.Add(Path.GetFileName(files[i]), Md5Sum(bytes));
-                }
-                else
-                {
-                    Debug.LogWarning($"{files[i]} already in dictionary");
-                }
-            }
-
-            var json = JsonConvert.SerializeObject(tokens, Formatting.Indented);
+            var json = AssetBundlesVersionsCreator.CreateVersions(files, objects, minVersion, maxVersion);
             File.WriteAllText($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}/{Symbols.VERSION_FILE_NAME}", json);
             AssetDatabase.ImportAsset($"{Symbols.ASSET_BUNDLE_PATH}/{currentTarget}/{Symbols.VERSION_FILE_NAME}", ImportAssetOptions.ForceUpdate);
-        }
-
-        private static string Md5Sum(byte[] bytes)
-        {
-            System.Security.Cryptography.MD5CryptoServiceProvider md5 = new System.Security.Cryptography.MD5CryptoServiceProvider();
-            byte[] hashBytes = md5.ComputeHash(bytes);
-            string hashString = "";
-
-            for (int i = 0; i < hashBytes.Length; i++)
-            {
-                hashString += System.Convert.ToString(hashBytes[i], 16).PadLeft(2, '0');
-            }
-            return hashString.PadLeft(32, '0');
         }
     }
 }

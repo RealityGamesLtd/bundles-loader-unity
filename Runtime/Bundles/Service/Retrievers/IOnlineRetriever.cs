@@ -7,7 +7,7 @@ using UnityEngine.Networking;
 using System;
 using BundlesLoader.Callbacks;
 using System.IO;
-using Utils;
+using BundlesLoader.Bundles.Core;
 
 namespace BundlesLoader.Service.Retrievers
 {
@@ -18,9 +18,13 @@ namespace BundlesLoader.Service.Retrievers
         public Action<float> ProgressCallback { get; private set; }
         public Action<IEntityCallback> BundleLoadedCallback { get; set; }
 
-        public IOnlineRetriever(Dictionary<string, string> versions, string assetBundlesUrl, Action<float> progressCallback)
+        private string AssetBundleVersionDirectory;
+
+        public IOnlineRetriever(Dictionary<string, BundleVersion> versions, string assetBundleVersionDirectory,
+            string assetBundlesUrl, Action<float> progressCallback)
         {
             ASSET_BUNDLES_URL = assetBundlesUrl;
+            AssetBundleVersionDirectory = assetBundleVersionDirectory;
             Versions = versions;
             ProgressCallback = progressCallback;
         }
@@ -37,7 +41,7 @@ namespace BundlesLoader.Service.Retrievers
 
             if (Versions.TryGetValue(name, out var bund))
             {
-                var res = await RetrieveBundle(name, bund, ct);
+                var res = await RetrieveBundle(name, bund.Hash, ct);
                 if (res.Item2 != null)
                 {
                     func?.Invoke(res.Item1, res.Item2);
@@ -47,6 +51,12 @@ namespace BundlesLoader.Service.Retrievers
 
         public async Task GetBundles(CancellationToken ct, Action<string, Bundle> func)
         {
+            if (string.IsNullOrEmpty(AssetBundleVersionDirectory))
+            {
+                Debug.LogError($"ONLINE PROVIDER: No directory for current game version: {Application.version}!");
+                return;
+            }
+
             await WaitForCache();
 
             if (Versions == null || Versions.Count == 0)
@@ -80,6 +90,7 @@ namespace BundlesLoader.Service.Retrievers
         {
             var url = $"{ASSET_BUNDLES_URL}/" +
                 $"{PlatformDictionary.GetDirectoryByPlatform(Application.platform)}/" +
+                $"{AssetBundleVersionDirectory}/" +
                 $"{name}";
 
             var versions = new List<Hash128>();

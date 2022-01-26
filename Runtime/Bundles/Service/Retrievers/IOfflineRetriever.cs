@@ -8,6 +8,7 @@ using UnityEngine.Networking;
 using System;
 using BundlesLoader.Callbacks;
 using Utils;
+using BundlesLoader.Bundles.Core;
 
 namespace BundlesLoader.Service.Retrievers
 {
@@ -16,7 +17,7 @@ namespace BundlesLoader.Service.Retrievers
         public Action<float> ProgressCallback { get; private set; }
         public Action<IEntityCallback> BundleLoadedCallback { get; set; }
 
-        public IOfflineRetriever(Dictionary<string, string> versions, string assetBundlesUrl, Action<float> progressCallback)
+        public IOfflineRetriever(Dictionary<string, BundleVersion> versions, string assetBundlesUrl, Action<float> progressCallback)
         {
             ASSET_BUNDLES_URL = assetBundlesUrl;
             Versions = versions;
@@ -35,7 +36,7 @@ namespace BundlesLoader.Service.Retrievers
 
             if (Versions.TryGetValue(name, out var hash))
             {
-                var res = await RetrieveBundle(name, hash, ct);
+                var res = await RetrieveBundle(name, hash.Hash, ct);
                 if (res.Item2 != null)
                 {
                     func?.Invoke(res.Item1, res.Item2);
