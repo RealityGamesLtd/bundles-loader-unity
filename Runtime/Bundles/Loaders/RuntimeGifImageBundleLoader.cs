@@ -16,25 +16,25 @@ namespace BundlesLoader.Bundles.Loaders
             gifImage = GetComponent<GifImage>();
         }
 
-        public void Initialize(string bundleName, string assetName)
+        public bool Initialize(string bundleName, string assetName)
         {
             bundleType.FullName = $"{Symbols.BUNDLES_SUBDIRECTORY}/{bundleName}/{assetName}";
 
             if (!IsValidAssetsService())
             {
-                return;
+                return false;
             }
 
             var assetsService = AssetsServiceLoader.AssetsService;
             if (assetsService.Bundles.TryGetValue(bundleName, out var bundle))
             {
                 bundle.OnAssetsChanged += OnAssetsChanged;
-                SetCurrentAsset(bundleType.FullName.Split('/'), bundle);
-
+                return  SetCurrentAsset(bundleType.FullName.Split('/'), bundle);
             }
             else
             {
                 Debug.LogError($"No bundle with name: {bundleName}");
+                return false;
             }
         }
 
@@ -64,7 +64,7 @@ namespace BundlesLoader.Bundles.Loaders
             }
         }
 
-        public void SetCurrentAsset(string[] split, Bundle bundle)
+        public bool SetCurrentAsset(string[] split, Bundle bundle)
         {
             var gifAsset = bundle.LoadAsset<TextAsset>(split[2]);
             if (gifAsset == null)
@@ -72,10 +72,11 @@ namespace BundlesLoader.Bundles.Loaders
                 Debug.LogError($"Bundle:{split[0]}/{split[1]} -> no gif:{split[2]}");
                 LogError(new AssetCallback(AssetErrorType.NULL_GIF, $"Bundle:{split[0]}/{split[1]} -> no gif:{split[2]}",
                     $"{split[0]}/{split[1]}", split[2]));
-                return;
+                return false;
             }
 
             gifImage.Load(gifAsset.bytes);
+            return true;
         }
 
         public void OnAssetsChanged(Bundle currentBundle)

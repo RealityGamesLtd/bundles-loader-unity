@@ -31,9 +31,7 @@ namespace BundlesLoader.Bundles.Loaders
             var bundle = AssetRetriever.GetBundle(bundleName);
             if (bundle != null)
                 bundle.OnAssetsChanged += OnAssetChanged;
-            SetStandaloneTexture(bundleType.FullName.Split('/'), bundle);
-
-            return true;
+            return SetStandaloneTexture(bundleType.FullName.Split('/'), bundle);
         }
 
         /// <summary>
@@ -62,9 +60,7 @@ namespace BundlesLoader.Bundles.Loaders
             }
 
             bundle.OnAssetsChanged += OnAssetChanged;
-            SetSpriteAtlasTexture(bundleType.FullName.Split('/'), bundle);
-
-            return true;
+            return SetSpriteAtlasTexture(bundleType.FullName.Split('/'), bundle);
         }
 
         /// <summary>
@@ -94,27 +90,25 @@ namespace BundlesLoader.Bundles.Loaders
             var split = bundleType.FullName.Split('/');
             if (split.Length == 4)
             {
-                SetSpriteAtlasTexture(split, bundle);
+                return SetSpriteAtlasTexture(split, bundle);
             }
             else if (split.Length == 3)
             {
-                SetStandaloneTexture(split, bundle);
+                return SetStandaloneTexture(split, bundle);
             }
             else
             {
                 Debug.LogError($"Wrong format: {assetType}!");
                 return false;
             }
-
-            return true;
         }
 
-        private void SetStandaloneTexture(string[] split, Bundle bundle)
+        private bool SetStandaloneTexture(string[] split, Bundle bundle)
         {
             if (bundle == null)
             {
                 Debug.LogError($"Could not set sprite atlas texture, bundle provided was NULL");
-                return;
+                return false;
             }
 
             var texture = bundle.LoadAsset<Texture2D>(split[2]);
@@ -124,21 +118,23 @@ namespace BundlesLoader.Bundles.Loaders
                 Debug.LogError($"Bundle:{split[0]}/{split[1]} -> no texture:{split[2]}");
                 LogError(new AssetCallback(AssetErrorType.NULL_TEXTURE, $"Bundle:{split[0]}/{split[1]} -> no texture:{split[2]}",
                     $":{split[0]}/{split[1]}", split[2]));
-                return;
+                return false;
             }
 
             if (texture != null)
                 SetSprite(Sprite.Create(texture, new Rect(0.0f, 0.0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100.0f));
             else if (sprite != null)
                 SetSprite(sprite);
+
+            return true;
         }
 
-        private void SetSpriteAtlasTexture(string[] split, Bundle bundle)
+        private bool SetSpriteAtlasTexture(string[] split, Bundle bundle)
         {
             if (bundle == null)
             {
                 Debug.LogError($"Could not set sprite atlas texture, bundle provided was NULL");
-                return;
+                return false;
             }
 
             var atlas = bundle.LoadAsset<SpriteAtlas>(split[2]);
@@ -147,7 +143,7 @@ namespace BundlesLoader.Bundles.Loaders
                 Debug.LogError($"Bundle:{split[0]}/{split[1]} -> no sprite atlas:{split[2]}");
                 LogError(new AssetCallback(AssetErrorType.NULL_SPRITEATLAS, $"Bundle:{split[0]}/{split[1]} -> no sprite atlas:{split[2]}",
                     $"{split[0]}", split[1]));
-                return;
+                return false;
             }
 
             var sprite = atlas.GetSprite(split[3]);
@@ -156,10 +152,12 @@ namespace BundlesLoader.Bundles.Loaders
                 Debug.LogError($"Bundle:{split[0]}/{split[1]}, Sprite atlas: {split[2]} -> no sprite: {split[3]}");
                 LogError(new AssetCallback(AssetErrorType.NULL_SPRITE, $"Bundle:{split[0]}/{split[1]}, Sprite atlas: {split[2]} -> no sprite: {split[3]}",
                     $"{split[0]}/{split[1]}/{split[2]}", split[3]));
-                return;
+                return false;
             }
 
             SetSprite(sprite);
+
+            return true;
         }
 
         private void OnDestroy()
