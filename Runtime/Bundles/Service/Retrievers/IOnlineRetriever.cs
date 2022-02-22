@@ -8,12 +8,14 @@ using System;
 using BundlesLoader.Callbacks;
 using System.IO;
 using BundlesLoader.Bundles.Core;
+using Newtonsoft.Json;
 
 namespace BundlesLoader.Service.Retrievers
 {
     public class IOnlineRetriever : Retriever, IBundleRetriever
     {
         private const int CACHE_COUNT_MAX = 1;
+        private const string BUNDLES_SUBDIRECTORY = "Bundles";
 
         public Action<float> ProgressCallback { get; private set; }
         public Action<IEntityCallback> BundleLoadedCallback { get; set; }
@@ -83,6 +85,23 @@ namespace BundlesLoader.Service.Retrievers
                 await task;
                 count++;
                 ProgressCallback?.Invoke((float)count / Versions.Count);
+            }
+
+            SaveOnlineVersions();
+        }
+
+        private void SaveOnlineVersions()
+        {
+            var path = Path.Combine(Application.temporaryCachePath, BUNDLES_SUBDIRECTORY);
+            if (Directory.Exists(path))
+            {
+                var fileName = $"{path}/version.json";
+                if (File.Exists(fileName)) File.Delete(fileName);
+                if (Versions != null)
+                {
+                    var json = JsonConvert.SerializeObject(Versions);
+                    File.WriteAllText(fileName, json);
+                }
             }
         }
 
