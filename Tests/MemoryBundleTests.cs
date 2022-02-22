@@ -69,7 +69,7 @@ namespace Tests
         private IEnumerator GetOffline()
         {
             var versions = GetVersionsOffline();
-            var currentRetriever = new IOfflineRetriever(versions, ASSET_BUNDLES_URL, (float t) => { });
+            var currentRetriever = new IOfflineRetriever(versions, versions, ASSET_BUNDLES_URL, (float t) => { });
             var task = currentRetriever.GetBundle(BUNDLE_NAME, default, LoadBundle);
 
             while (!task.IsCompleted)

@@ -191,10 +191,10 @@ namespace BundlesLoader.Service.Retrievers
             if (CachedVersions.TryGetValue(name, out var cachedVersion) &&
                 Versions.TryGetValue(name, out var streamedVersion))
             {
-                if (streamedVersion.MinVersion.Equals(currentVersion))
-                    downloadCachedVersion = false;
-                else if (cachedVersion.MaxVersion.Equals(currentVersion))
+                if (cachedVersion.MaxVersion.Equals(currentVersion))
                     downloadCachedVersion = listOfCachedVersions.Count > 0;
+                else if (streamedVersion.MinVersion.Equals(currentVersion))
+                    downloadCachedVersion = false;
             }
 
             return downloadCachedVersion;
