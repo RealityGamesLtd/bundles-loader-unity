@@ -17,10 +17,14 @@ namespace BundlesLoader.Service.Retrievers
         public Action<float> ProgressCallback { get; private set; }
         public Action<IEntityCallback> BundleLoadedCallback { get; set; }
 
-        public IOfflineRetriever(Dictionary<string, BundleVersion> versions, string assetBundlesUrl, Action<float> progressCallback)
+        protected Dictionary<string, BundleVersion> CachedVersions;
+
+        public IOfflineRetriever(Dictionary<string, BundleVersion> streamingVersions, Dictionary<string, BundleVersion> chachedVersions,
+            string assetBundlesUrl, Action<float> progressCallback)
         {
             ASSET_BUNDLES_URL = assetBundlesUrl;
-            Versions = versions;
+            Versions = streamingVersions;
+            CachedVersions = chachedVersions;
             ProgressCallback = progressCallback;
         }
 
@@ -86,8 +90,11 @@ namespace BundlesLoader.Service.Retrievers
             List<Hash128> listOfCachedVersions = new List<Hash128>();
             Caching.GetCachedVersions(name, listOfCachedVersions);
 
+            var currentVersion = Application.version.ToString();
+            var useCached = CheckForVersionToDownload(name, currentVersion, listOfCachedVersions);
+
             //If no cached bundles are present and we are offline (First game run)
-            if (listOfCachedVersions.Count < 1)
+            if (!useCached)
             {
                 AssetBundleCreateRequest fileTask = null;
                 try
@@ -175,6 +182,22 @@ namespace BundlesLoader.Service.Retrievers
                 }
             }
             return loadedBundle;
+        }
+
+        private bool CheckForVersionToDownload(string name, string currentVersion, List<Hash128> listOfCachedVersions)
+        {
+            bool downloadCachedVersion = false;
+
+            if (CachedVersions.TryGetValue(name, out var cachedVersion) &&
+                Versions.TryGetValue(name, out var streamedVersion))
+            {
+                if (streamedVersion.MinVersion.Equals(currentVersion))
+                    downloadCachedVersion = false;
+                else if (cachedVersion.MaxVersion.Equals(currentVersion))
+                    downloadCachedVersion = listOfCachedVersions.Count > 0;
+            }
+
+            return downloadCachedVersion;
         }
 
         private void UnloadCurrentBundle(string name)
