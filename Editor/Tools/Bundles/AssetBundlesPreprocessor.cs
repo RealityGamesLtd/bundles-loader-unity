@@ -4,13 +4,38 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using BundlesLoader.EditorHelpers.Tools.SpriteDownloader.Window.Utils;
 using Utils;
 
 namespace BundlesLoader.EditorHelpers.Tools.Bundles
 {
-    public class AssetBundlesPreprocessor : IPreprocessBuildWithReport
+    public enum ElementType
     {
+        DIRECTORY,
+        FILE
+    }
+
+    public class Element
+    {
+        public ElementType Type { get; private set; }
+        public string Name { get; private set; }
+
+        public Element(ElementType type, string name)
+        {
+            Type = type;
+            Name = name;
+        }
+    }
+
+    public class AssetBundlesPreprocessor : IPreprocessBuildWithReport, IPostprocessBuildWithReport
+    {
+        private readonly string TEMP_PATH = $"{Application.persistentDataPath}/Temp";
+        private readonly string TEXTURES_PATH = $"{Application.dataPath}/Textures";
+
         public int callbackOrder { get { return 0; } }
+        private List<Element> savedNames = new List<Element>();
 
         public void OnPreprocessBuild(BuildReport report)
         {
@@ -24,7 +49,7 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
                     && string.IsNullOrEmpty(Path.GetExtension(x))).ToArray();
                 var versionFile = files.Find(x => Path.GetExtension(x).Equals(".json"));
 
-                if(bundles != null && versionFile !=  null)
+                if (bundles != null && versionFile != null)
                 {
                     var path = Path.Combine(Application.streamingAssetsPath, Symbols.BUNDLES_SUBDIRECTORY);
 
@@ -63,6 +88,79 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
             }
             else
                 Debug.LogError($"No directory {assetBundlesPath}!");
+
+            if (!Directory.Exists(TEXTURES_PATH))
+            {
+                Debug.LogError($"{TEXTURES_PATH} doesn't exists!");
+                return;
+            }
+
+            if (!Directory.Exists(TEMP_PATH))
+            {
+                Debug.LogWarning($"{TEMP_PATH} doesn't exists! Creating directory");
+                Directory.CreateDirectory(TEMP_PATH);
+            }
+
+            DirectoryInfo di = new DirectoryInfo(TEMP_PATH);
+            foreach (FileInfo file in di.GetFiles())
+            {
+                file.Delete();
+            }
+            foreach (DirectoryInfo dir in di.GetDirectories())
+            {
+                dir.Delete(true);
+            }
+
+            savedNames.Clear();
+            var texFiles = Directory.GetFiles(TEXTURES_PATH).ToList();
+            var directories = Directory.GetDirectories(TEXTURES_PATH).ToList();
+
+            texFiles = texFiles.Where(x =>
+                Regex.Match(Path.GetExtension(x), AssetsRegexs.TEXTURE_REGEX).Success || Regex.Match(Path.GetExtension(x), AssetsRegexs.META_REGEX).Success).ToList();
+
+            foreach (var file in texFiles)
+            {
+                var info = new FileInfo(file);
+                info?.MoveTo($"{TEMP_PATH}/{info.Name}");
+
+                savedNames.Add(new Element(ElementType.FILE, info.Name));
+                AssetDatabase.DeleteAsset(file);
+            }
+
+            foreach (var directory in directories)
+            {
+                var info = new DirectoryInfo(directory);
+                var metaFile = new FileInfo($"{directory}.meta");
+                metaFile?.Delete();
+                info?.MoveTo($"{TEMP_PATH}/{info.Name}");
+
+                savedNames.Add(new Element(ElementType.DIRECTORY, info.Name));
+                AssetDatabase.DeleteAsset(directory);
+                AssetDatabase.DeleteAsset($"{directory}.meta");
+            }
+        }
+
+        public void OnPostprocessBuild(BuildReport report)
+        {
+            if (!Directory.Exists(TEMP_PATH))
+            {
+                Debug.LogError($"{TEMP_PATH} doesn't exists!");
+                return;
+            }
+
+            if (!Directory.Exists(TEXTURES_PATH))
+            {
+                Debug.LogError($"{TEXTURES_PATH} doesn't exists!");
+                return;
+            }
+
+            foreach (var content in savedNames)
+            {
+                var path = $"{TEXTURES_PATH}/{content.Name}";
+                FileUtil.MoveFileOrDirectory($"{TEMP_PATH}/{content.Name}", path);
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            }
+            AssetDatabase.Refresh();
         }
     }
 }
