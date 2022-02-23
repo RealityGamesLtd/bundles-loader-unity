@@ -196,10 +196,20 @@ namespace BundlesLoader.Service.Retrievers
                 if (CachedVersions.TryGetValue(name, out var cachedVersion) &&
                     Versions.TryGetValue(name, out var streamedVersion))
                 {
-                    if (cachedVersion.MaxVersion >= ver)
-                        downloadCachedOrStreamedFlag = listOfCachedVersions != null && listOfCachedVersions.Count > 0;
-                    else if (streamedVersion.MinVersion <= ver)
-                        downloadCachedOrStreamedFlag = false;
+                    var cachedMax = cachedVersion.Max;
+                    var streamedMin = streamedVersion.Min;
+
+                    if(cachedMax != null && streamedMin != null)
+                    {
+                        if (cachedMax >= ver)
+                            downloadCachedOrStreamedFlag = listOfCachedVersions != null && listOfCachedVersions.Count > 0;
+                        else if (streamedMin <= ver)
+                            downloadCachedOrStreamedFlag = false;
+                    }
+                    else
+                    {
+                        Debug.LogError($"OFFLINE PROVIDER: Bundle: {name}, has not min or max version inside versions file!");
+                    }
                 }
             }
 
