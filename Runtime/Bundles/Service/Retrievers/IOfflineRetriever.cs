@@ -186,18 +186,24 @@ namespace BundlesLoader.Service.Retrievers
 
         private bool CheckForVersionToDownload(string name, string currentVersion, List<Hash128> listOfCachedVersions)
         {
-            bool downloadCachedVersion = false;
+            bool downloadCachedOrStreamedFlag = false;
 
-            if (CachedVersions.TryGetValue(name, out var cachedVersion) &&
-                Versions.TryGetValue(name, out var streamedVersion))
+            if (CachedVersions == null)
+                return downloadCachedOrStreamedFlag;
+
+            if(Version.TryParse(currentVersion, out var ver))
             {
-                if (cachedVersion.MaxVersion.Equals(currentVersion))
-                    downloadCachedVersion = listOfCachedVersions.Count > 0;
-                else if (streamedVersion.MinVersion.Equals(currentVersion))
-                    downloadCachedVersion = false;
+                if (CachedVersions.TryGetValue(name, out var cachedVersion) &&
+                    Versions.TryGetValue(name, out var streamedVersion))
+                {
+                    if (cachedVersion.MaxVersion >= ver)
+                        downloadCachedOrStreamedFlag = listOfCachedVersions != null && listOfCachedVersions.Count > 0;
+                    else if (streamedVersion.MinVersion <= ver)
+                        downloadCachedOrStreamedFlag = false;
+                }
             }
 
-            return downloadCachedVersion;
+            return downloadCachedOrStreamedFlag;
         }
 
         private void UnloadCurrentBundle(string name)
