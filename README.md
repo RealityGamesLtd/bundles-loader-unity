@@ -35,9 +35,11 @@ File in which all bundles names (with hierarchy) is contained, this file is used
 File in which all bundles information from build is contained. It holds information about creation date, hash, and min/max version. Hash is used to use caching functionality for example to not download newest bundle from server if the game already downloaded it.
 # Mainfest.json
 ```json
-"3.0.29" : "3.0.24",
-"3.0.30" : "3.0.30",
-"3.0.31" : "3.0.30"
+{
+  "3.0.29" : "3.0.24",
+  "3.0.30" : "3.0.30",
+  "3.0.31" : "3.0.30"
+}
 ```
 Manifest file is used to point specific game version (on the left side) to specific asset bundle directory present on the server inside _android_ or _ios_ directory (right side). <mark>Please be sure to specify all game versions on the left side and point them to any directory.</mark>. Do not duplicate game versions in this json file.
 
