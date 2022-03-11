@@ -37,14 +37,15 @@ File in which all bundles information from build is contained. It holds informat
 "3.0.30" : "3.0.30",
 "3.0.31" : "3.0.30"
 ```
-Manifest file is used to point specific game version (on the left side) to specific asset bundle directory present on the server inside _android_ or _ios_ directory (right side). ==Please be sure to specify all game versions on the left side and point them to any directory.==
+Manifest file is used to point specific game version (on the left side) to specific asset bundle directory present on the server inside _android_ or _ios_ directory (right side). <mark>Please be sure to specify all game versions on the left side and point them to any directory.</mark>. Do not duplicate game versions in this json file.
 
 ## Specify version
 ![Builder](Readme/version.png)
-Concept of version is proposed to create an environment in which we can store different versions of bundles for different versions of game. For example if version 3.0.29 is using old button texture and 3.0.30 isn't using this texture, we simply differentiate asset bundle packs on server. If you are building bundles for specific version of the game, check if you can start form some starting oldest version and use this version as base "minVersion" value, on the other hand "maxVersion" should also be set with caution in the same way.
+Concept of version is proposed to create an environment in which we can store different versions of bundles for different versions of game. For example if version 3.0.29 is using old button texture and 3.0.30 isn't using this texture, we simply differentiate asset bundle packs on server. <mark>If you are building bundles for specific version of the game, check if you can start form some starting oldest version and use this version as base "minVersion" value, on the other hand "maxVersion" should also be set with caution in the same way.</mark>
+If you want to re-build bundles for the same version as it is in asset server you can simply grab "minVersion" and "maxVersion" values from this directory
 
 ## Populate bundles
-In order to build bundles there is a need to populate selected object list in editor window. Simply drag and drop objects from your unity project assets and create hierarchy in your way. After that, select "fresh build" toggle and build bundles for Android and iOS (you need to do it separately)
+In order to build bundles there is a need to populate selected object list in editor window. Simply drag and drop objects from your unity project assets and create hierarchy in your way. After that, select "fresh build" toggle and build bundles for Android and iOS (you need to do it separately).
 
 ## After build
 All bundles products are present inside "AssetBundles" directory in your project. Simply grab all files from Android and iOS directory omitting .manifest and .meta files and upload them to directory on your asset server under correct game version directory. Directories on asset server have naming convention based on "minVersion" present in each "version.json" file.
