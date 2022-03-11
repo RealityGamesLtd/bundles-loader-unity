@@ -7,12 +7,12 @@ All loaders used as components are currently supporting:
 
 ### Tutorial
 ## Open asset builder window
-![Builder](Readme/builderWindow.png){:height="200px" width="200px"}
+![Builder](Readme/builderWindow.png)<img src="Readme/builderWindow.png"  width="200" height="200">
 # Fields
 In this window you can see some fields:
 - Version File -> specifies min/max game version for which current bundles set is being built
 - Selected objects -> here you are putting all your objects inside specified hierarchy:
-![Builder](Readme/hierarchy.png){:height="200px" width="200px"}
+![Builder](Readme/hierarchy.png)<img src="Readme/hierarchy.png"  width="200" height="200">
 Basically we have two options, either we are specifing spriteatlas inside asset bundle (if we want to optimize packing) or bundle 
 which contains "raw" objects, as you can see in _assets_bg_ bundle (to specify different compression for individual textures)
 - Load button -> loads previously built bundles to create user friendly managment
@@ -40,7 +40,7 @@ File in which all bundles information from build is contained. It holds informat
 Manifest file is used to point specific game version (on the left side) to specific asset bundle directory present on the server inside _android_ or _ios_ directory (right side). <mark>Please be sure to specify all game versions on the left side and point them to any directory.</mark>. Do not duplicate game versions in this json file.
 
 ## Specify version
-![Builder](Readme/version.png){:height="200px" width="200px"}
+![Builder](Readme/version.png)<img src="Readme/version.png"  width="200" height="200">
 Concept of version is proposed to create an environment in which we can store different versions of bundles for different versions of game. For example if version 3.0.29 is using old button texture and 3.0.30 isn't using this texture, we simply differentiate asset bundle packs on server. <mark>If you are building bundles for specific version of the game, check if you can start form some starting oldest version and use this version as base "minVersion" value, on the other hand "maxVersion" should also be set with caution in the same way.</mark>
 If you want to re-build bundles for the same version as it is in asset server you can simply grab "minVersion" and "maxVersion" values from this directory
 
