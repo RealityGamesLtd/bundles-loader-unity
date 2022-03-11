@@ -7,7 +7,7 @@ All loaders used as components are currently supporting:
 
 ### Tutorial
 ## Open asset builder window
-![Builder](Readme/builderWindow.png)<img src="Readme/builderWindow.png"  width="200" height="200">
+<img src="Readme/builderWindow.png" height="200">
 # Fields
 In this window you can see some fields:
 - Version File -> specifies min/max game version for which current bundles set is being built
