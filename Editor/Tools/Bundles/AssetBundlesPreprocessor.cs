@@ -6,7 +6,6 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using BundlesLoader.EditorHelpers.Tools.SpriteDownloader.Window.Utils;
 using Utils;
 
 namespace BundlesLoader.EditorHelpers.Tools.Bundles

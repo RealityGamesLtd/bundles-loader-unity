@@ -1,4 +1,4 @@
-﻿namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader.Window.Utils
+﻿namespace BundlesLoader
 {
     public static class AssetsRegexs
     {

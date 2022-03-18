@@ -2,6 +2,7 @@
 using System.Linq;
 using UnityEngine;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace BundlesLoader.Service
 {
@@ -34,10 +35,19 @@ namespace BundlesLoader.Service
 
         public T LoadAsset<T>(string assetName) where T : Object
         {
-            var name = Path.GetFileNameWithoutExtension(assetName);
-            if (!string.IsNullOrEmpty(name))
+            var extension = Path.GetExtension(assetName);
+            var textureMatch = Regex.Match(extension, AssetsRegexs.TEXTURE_REGEX);
+            var byteMatch = Regex.Match(extension, AssetsRegexs.BYTE_REGEX);
+
+            if ((textureMatch != null && textureMatch.Success) ||
+                (byteMatch != null && byteMatch.Success))
             {
-                var asset = Assets.Find(x => x is T && x.name.Equals(name));
+                assetName = Path.GetFileNameWithoutExtension(assetName);
+            }
+
+            if (!string.IsNullOrEmpty(assetName))
+            {
+                var asset = Assets.Find(x => x is T && x.name.Equals(assetName));
                 if (asset != null)
                 {
                     return asset as T;
