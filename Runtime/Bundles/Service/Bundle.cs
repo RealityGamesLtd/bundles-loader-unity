@@ -36,18 +36,25 @@ namespace BundlesLoader.Service
         public T LoadAsset<T>(string assetName) where T : Object
         {
             var extension = Path.GetExtension(assetName);
-            var textureMatch = Regex.Match(extension, AssetsRegexs.TEXTURE_REGEX);
-            var byteMatch = Regex.Match(extension, AssetsRegexs.BYTE_REGEX);
+            string name = assetName;
 
-            if ((textureMatch != null && textureMatch.Success) ||
-                (byteMatch != null && byteMatch.Success))
+            if (!string.IsNullOrEmpty(extension))
             {
-                assetName = Path.GetFileNameWithoutExtension(assetName);
+                var textureMatch = Regex.Match(extension, AssetsRegexs.TEXTURE_REGEX);
+                var byteMatch = Regex.Match(extension, AssetsRegexs.BYTE_REGEX);
+                var atlasMatch = Regex.Match(extension, AssetsRegexs.SPRITEATLAS_REGEX);
+
+                if ((textureMatch != null && textureMatch.Success) ||
+                    (byteMatch != null && byteMatch.Success) ||
+                    (atlasMatch != null && atlasMatch.Success))
+                {
+                    name = Path.GetFileNameWithoutExtension(name);
+                }
             }
 
-            if (!string.IsNullOrEmpty(assetName))
+            if (!string.IsNullOrEmpty(name))
             {
-                var asset = Assets.Find(x => x is T && x.name.Equals(assetName));
+                var asset = Assets.Find(x => x is T && x.name.Equals(name));
                 if (asset != null)
                 {
                     return asset as T;
