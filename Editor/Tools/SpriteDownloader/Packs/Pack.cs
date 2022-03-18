@@ -21,7 +21,7 @@ namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader.Packs
                 Directory.CreateDirectory($"{texturesPath}/{Parent}");
             }
 
-            if (Regex.Match(Name, AssetsRegexs.BYTE_REGEX).Success)
+            if (Regex.Match(Name, AssetsRegexs.GIF_REGEX).Success)
             {
                 Name = $"{Path.GetFileName(Name)}.bytes";
             }

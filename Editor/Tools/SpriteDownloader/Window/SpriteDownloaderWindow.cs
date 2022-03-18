@@ -358,7 +358,7 @@ namespace BundlesLoader.EditorHelpers.Tools.SpriteDownloader.Window
                 tex.LoadImage(resp.Bytes);
                 return new TexturePack(tex, resp.Name, resp.FolderName);
             }
-            else if (Regex.Match(resp.Name, AssetsRegexs.BYTE_REGEX).Success)
+            else if (Regex.Match(resp.Name, AssetsRegexs.GIF_REGEX).Success)
             {
                 return new BytePack(resp.Bytes, resp.Name, resp.FolderName);
             }
