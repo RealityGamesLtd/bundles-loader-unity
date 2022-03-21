@@ -8,6 +8,19 @@ namespace BundlesLoader.Bundles.Loaders.ImageLoader
     {
         private Image image;
 
+        public Sprite sprite
+        {
+            get
+            {
+                if (image == null)
+                {
+                    image = GetComponent<Image>();
+                }
+
+                return image.sprite;
+            }
+        }
+
         protected override void SetSprite(Sprite sprite)
         {
             if (image == null)
