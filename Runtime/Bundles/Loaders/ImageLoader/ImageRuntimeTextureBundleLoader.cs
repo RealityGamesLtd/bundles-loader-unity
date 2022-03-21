@@ -19,6 +19,15 @@ namespace BundlesLoader.Bundles.Loaders.ImageLoader
 
                 return image.sprite;
             }
+            set
+            {
+                if (image == null)
+                {
+                    image = GetComponent<Image>();
+                }
+
+                image.sprite = value;
+            }
         }
 
         protected override void SetSprite(Sprite sprite)
