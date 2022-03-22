@@ -51,5 +51,25 @@ namespace BundlesLoader
 
             return bundle;
         }
+
+        public static bool IsAsset(string name)
+        {
+            var bundles = AssetsServiceLoader.AssetsService.Bundles;
+            bool ret = false;
+
+            foreach(var bundle in bundles)
+            {
+                var assets = bundle.Value.Assets;
+                if(assets != null)
+                {
+                    var asset = assets.Find(x => x.name.Equals(name));
+                    if (asset != null)
+                        ret = true;
+                }
+
+            }
+
+            return ret;
+        }
     }
 }
