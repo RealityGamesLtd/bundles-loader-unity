@@ -1,6 +1,7 @@
 using BundlesLoader.Bundles.Core;
 using BundlesLoader.Service;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -60,26 +61,42 @@ namespace BundlesLoader
             var bundles = AssetsServiceLoader.AssetsService.Bundles;
             bool ret = false;
 
-            foreach(var bundle in bundles)
+            foreach (var bundle in bundles)
             {
                 var assets = bundle.Value.Assets;
-                if(assets != null)
+                if (assets != null)
                 {
                     var obj = assets.First();
-                    if(obj is SpriteAtlas atl)
-                    {
-                        var sprite = Path.GetFileNameWithoutExtension(name);
-                        ret = !string.IsNullOrEmpty(sprite) && atl.GetSprite(sprite) != null;
-                    }
+                    if (obj is SpriteAtlas atl)
+                        ret = CheckForSpriteInAtlas(name, atl);
                     else
-                    {
-                        var asset = assets.Find(x => x.name.Equals(name));
-                        if (asset != null)
-                            ret = true;
-                    }
+                        ret = CheckForTexture(name, assets);
                 }
+
+                if (ret)
+                    break;
             }
 
+            return ret;
+        }
+
+        private static bool CheckForTexture(string name, List<UnityEngine.Object> assets)
+        {
+            bool ret = false;
+            var asset = assets.Find(x => x.name.Equals(name));
+
+            if (asset != null)
+                ret = true;
+            return ret;
+        }
+
+        private static bool CheckForSpriteInAtlas(string name, SpriteAtlas atl)
+        {
+            bool ret = false;
+            var sprite = Path.GetFileNameWithoutExtension(name);
+
+            if (!string.IsNullOrEmpty(sprite) && atl.GetSprite(sprite) != null)
+                ret = true;
             return ret;
         }
     }
