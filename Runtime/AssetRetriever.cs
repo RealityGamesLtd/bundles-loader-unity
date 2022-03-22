@@ -2,6 +2,7 @@ using BundlesLoader.Bundles.Core;
 using BundlesLoader.Service;
 using System;
 using UnityEngine;
+using UnityEngine.U2D;
 
 namespace BundlesLoader
 {
@@ -64,9 +65,13 @@ namespace BundlesLoader
                 {
                     var asset = assets.Find(x => x.name.Equals(name));
                     if (asset != null)
-                        ret = true;
+                    {
+                        if (asset is SpriteAtlas atl)
+                            ret = atl.GetSprite(name) != null;
+                        else
+                            ret = true;
+                    }
                 }
-
             }
 
             return ret;
