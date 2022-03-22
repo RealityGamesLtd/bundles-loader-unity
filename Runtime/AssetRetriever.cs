@@ -1,6 +1,7 @@
 using BundlesLoader.Bundles.Core;
 using BundlesLoader.Service;
 using System;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.U2D;
@@ -67,7 +68,8 @@ namespace BundlesLoader
                     var obj = assets.First();
                     if(obj is SpriteAtlas atl)
                     {
-                        ret = atl.GetSprite(name) != null;
+                        var sprite = Path.GetFileNameWithoutExtension(name);
+                        ret = !string.IsNullOrEmpty(sprite) && atl.GetSprite(sprite) != null;
                     }
                     else
                     {
