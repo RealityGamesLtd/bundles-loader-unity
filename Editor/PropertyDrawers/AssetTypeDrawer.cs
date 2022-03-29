@@ -26,7 +26,7 @@ namespace BundlesLoader.PropertyDrawers
             if(fullPath != null)
             {
                 Set(fullPath.stringValue);
-                index = EditorGUI.Popup(position, property.name, index, names.ToArray());
+                index = EditorGUI.Popup(position, property.displayName, index, names.ToArray());
                 if (index != -1 && index < names.Count && names[index] != fullPath.stringValue)
                 {
                     fullPath.stringValue = names[index];
