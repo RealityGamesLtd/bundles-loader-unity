@@ -28,6 +28,7 @@ namespace BundlesLoader.Bundles.Core
 
     public interface IPathComponents
     {
+        string RootName { get; }
         string BundleName { get; }
         string AssetName { get; }
         string FullPath { get; }
@@ -38,6 +39,7 @@ namespace BundlesLoader.Bundles.Core
     /// </summary>
     public struct SpriteAtlasAssetPathComponents : IPathComponents
     {
+        public string RootName { get; set; }
         public string BundleName { get; set; }
         public string SpriteAtlasName { get; set; }
         public string AssetName { get; set; }
@@ -49,6 +51,7 @@ namespace BundlesLoader.Bundles.Core
 
             var splitString = path.Split('/');
 
+            RootName = splitString[0];
             BundleName = splitString[1];
             SpriteAtlasName = splitString[2];
             AssetName = splitString[3];
@@ -84,6 +87,7 @@ namespace BundlesLoader.Bundles.Core
     /// </summary>
     public struct AssetPathComponents : IPathComponents
     {
+        public string RootName { get; set; }
         public string BundleName { get; set; }
         public string AssetName { get; set; }
         public string FullPath { get; private set; }
@@ -94,6 +98,7 @@ namespace BundlesLoader.Bundles.Core
 
             var splitString = path.Split('/');
 
+            RootName = splitString[0];
             BundleName = splitString[1];
             AssetName = splitString[2];
             FullPath = path;

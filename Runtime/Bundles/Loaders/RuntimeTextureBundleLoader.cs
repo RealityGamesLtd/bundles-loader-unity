@@ -89,6 +89,7 @@ namespace BundlesLoader.Bundles.Loaders
         {
             var parts = assetType.GetPathComponents();
             bundleType.FullName = parts.FullPath;
+            bundleType.RootName = parts.RootName;
             bundleType.BundleName = parts.BundleName;
             bundleType.EntityName = parts.AssetName;
 
@@ -179,18 +180,18 @@ namespace BundlesLoader.Bundles.Loaders
                 return false;
             }
 
-            if (string.IsNullOrEmpty(bundleType.EntityName))
-            {
-                Debug.LogError($"No entity name set up: {bundleType.FullName}!");
-                return false;
-            }
-
             var atlas = bundle.LoadAsset<SpriteAtlas>(bundleType.BundleName);
             if (atlas == null)
             {
-                Debug.LogError($"Bundle:{bundleType.RootName}/{bundleType.BundleName} -> no sprite atlas:{bundleType.EntityName}");
-                LogError(new AssetCallback(AssetErrorType.NULL_SPRITEATLAS, $"Bundle:{bundleType.RootName}/{bundleType.BundleName} -> no sprite atlas:{bundleType.EntityName}",
+                Debug.LogError($"Bundle:{bundleType.RootName}/{bundleType.BundleName} -> no sprite atlas:{bundleType.BundleName}");
+                LogError(new AssetCallback(AssetErrorType.NULL_SPRITEATLAS, $"Bundle:{bundleType.RootName}/{bundleType.BundleName} -> no sprite atlas:{bundleType.BundleName}",
                     $"{bundleType.RootName}", bundleType.BundleName));
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(bundleType.EntityName))
+            {
+                Debug.LogError($"No entity name set up: {bundleType.FullName}!");
                 return false;
             }
 
