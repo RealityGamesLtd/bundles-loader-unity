@@ -78,7 +78,7 @@ namespace BundlesLoader.Bundles.Core
             int count = 0;
             for (int i = 0; i < path.Length; ++i)
                 if (path[i] == '/') count++;
-            return count == 4;
+            return count == 3;
         }
     }
 
@@ -111,7 +111,7 @@ namespace BundlesLoader.Bundles.Core
             int count = 0;
             for(int i = 0; i < path.Length; ++i)
                 if (path[i] == '/') count++;
-            return count == 3;
+            return count == 2;
         }
     }
 }
