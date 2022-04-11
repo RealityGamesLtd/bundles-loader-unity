@@ -35,6 +35,22 @@ namespace BundlesLoader.Bundles.Loaders
 
             return true;
         }
+
+        private void OnValidate()
+        {
+            if (string.IsNullOrEmpty(bundleType.FullName))
+            {
+                return;
+            }
+
+            var split = bundleType.FullName.Split('/');
+            if (split.Length >= 3)
+            {
+                bundleType.BundleName = split[1];
+                bundleType.RootName = split[0];
+                bundleType.EntityName = split[2];
+            }
+        }
     }
 }
 
