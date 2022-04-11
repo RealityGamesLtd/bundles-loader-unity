@@ -48,8 +48,12 @@ namespace BundlesLoader.Bundles.Loaders
             {
                 bundleType.BundleName = split[1];
                 bundleType.RootName = split[0];
-                bundleType.EntityName = split[2];
             }
+
+            if (split.Length == 4)
+                bundleType.EntityName = split[3];
+            else if (split.Length == 3)
+                bundleType.EntityName = split[2];
         }
     }
 }
