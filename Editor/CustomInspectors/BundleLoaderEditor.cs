@@ -2,26 +2,34 @@
 using System.Collections.Generic;
 using BundlesLoader.Bundles.Loaders;
 using System.Linq;
+using System;
 
 namespace BundlesLoader.CustomInspectors
 {
     [CustomEditor(typeof(BundleLoader), true)]
     public abstract class BundleLoaderEditor : Editor
     {
-        protected SerializedProperty currentPath;
+        protected SerializedProperty fullPathProperty;
+        protected SerializedProperty bundleNameProperty;
+        protected SerializedProperty rootNameProperty;
+        protected SerializedProperty entityNameProperty;
 
         public int index;
         protected string[] Names { get; set; }
 
         protected abstract string[] SetNames();
+        protected abstract Tuple<string, string, string> GetData();
 
         protected virtual void OnEnable()
         {
             var bundleType = serializedObject.FindProperty("bundleType");
-            currentPath = bundleType.FindPropertyRelative("FullName");
-            Names = SetNames();
+            fullPathProperty = bundleType.FindPropertyRelative("FullName");
+            bundleNameProperty = bundleType.FindPropertyRelative("BundleName");
+            entityNameProperty = bundleType.FindPropertyRelative("EntityName");
+            rootNameProperty = bundleType.FindPropertyRelative("RootName");
 
-            index = Names.ToList().IndexOf(currentPath.stringValue);
+            Names = SetNames();
+            index = Names.ToList().IndexOf(fullPathProperty.stringValue);
         }
 
         public override void OnInspectorGUI()
@@ -47,7 +55,12 @@ namespace BundlesLoader.CustomInspectors
                     if (elementAtIndex != null)
                     {
                         var elem = elements[index];
-                        currentPath.stringValue = elem;
+                        fullPathProperty.stringValue = elem;
+
+                        var data = GetData();
+                        rootNameProperty.stringValue = data.Item1;
+                        bundleNameProperty.stringValue = data.Item2;
+                        entityNameProperty.stringValue = data.Item3;
                     }
                 }
             }

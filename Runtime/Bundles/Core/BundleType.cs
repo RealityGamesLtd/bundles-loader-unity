@@ -1,5 +1,4 @@
 ﻿using Bundles.Utils;
-using UnityEngine;
 
 namespace BundlesLoader.Bundles.Core
 {
@@ -7,7 +6,9 @@ namespace BundlesLoader.Bundles.Core
     public class BundleType
     {
         public string[] Names => AssetTreeNames.Initialize(AssetBundlesChecker.GetBundlesNames());
-        [HideInInspector]
         public string FullName;
+        public string RootName;
+        public string BundleName;
+        public string EntityName;
     }
 }

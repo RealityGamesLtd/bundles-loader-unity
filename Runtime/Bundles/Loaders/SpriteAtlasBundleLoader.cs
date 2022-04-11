@@ -15,34 +15,38 @@ namespace BundlesLoader.Bundles.Loaders
         {
             if (Application.isEditor)
             {
-                if (bundleType == null || bundleType.FullName == null)
+                if (string.IsNullOrEmpty(bundleType.FullName))
                 {
                     Debug.LogError("Bundle type not loaded!");
                     return;
                 }
 
-                var split = bundleType.FullName?.Split('/');
-                if (split.Length != 4)
+                if (string.IsNullOrEmpty(bundleType.BundleName))
                 {
-                    Debug.LogError($"Wrong format: {bundleType.FullName} !");
+                    Debug.LogError($"Wrong bundle name: {bundleType.FullName}!");
                     return;
                 }
 
                 var spriteAtlas = AssetLoader.GetAsset<SpriteAtlas>(
-                    split[1],
-                    split[2]);
-
+                   bundleType.BundleName,
+                   bundleType.BundleName);
                 if (spriteAtlas == null)
                 {
-                    Debug.LogError($"Bundle:{split[0]}/{split[1]} -> no sprite atlas:{split[2]}");
+                    Debug.LogError($"Bundle:{bundleType.RootName}/{bundleType.BundleName} -> no sprite atlas:{bundleType.BundleName}");
                     return;
                 }
 
-                var sprite = spriteAtlas.GetSprite(split[3]);
+                if (string.IsNullOrEmpty(bundleType.EntityName))
+                {
+                    Debug.LogError($"Wrong entity name: {bundleType.FullName}!");
+                    return;
+                }
 
+                var sprite = spriteAtlas.GetSprite(bundleType.EntityName);
                 if (sprite == null)
                 {
-                    Debug.LogError($"Bundle:{split[0]}/{split[1]}, Sprite atlas: {split[2]} -> no sprite: {split[3]}");
+                    Debug.LogError($"Bundle:{bundleType.RootName}/{bundleType.BundleName}, Sprite atlas: " +
+                        $"{bundleType.BundleName} -> no sprite: {bundleType.EntityName}");
                     return;
                 }
 
@@ -59,22 +63,20 @@ namespace BundlesLoader.Bundles.Loaders
             }
 
             var assetsService = AssetsServiceLoader.AssetsService;
-
-            var split = bundleType.FullName?.Split('/');
-            if (split.Length != 4)
+            if (string.IsNullOrEmpty(bundleType.BundleName))
             {
-                Debug.LogError($"Wrong format: {bundleType.FullName} !");
+                Debug.LogError($"No bundle name set up for: {bundleType.FullName} !");
                 return;
             }
 
-            if (assetsService.Bundles.TryGetValue(split[1], out var bundle))
+            if (assetsService.Bundles.TryGetValue(bundleType.BundleName, out var bundle))
             {
                 bundle.OnAssetsChanged += OnAssetsChanged;
-                SetCurrentAsset(split, bundle);
+                SetCurrentAsset(bundle);
             }
             else
             {
-                Debug.LogError($"No bundle with name: {split[1]}");
+                Debug.LogError($"No bundle with name: {bundleType.BundleName}");
             }
         }
 
@@ -86,41 +88,52 @@ namespace BundlesLoader.Bundles.Loaders
             }
 
             var assetsService = AssetsServiceLoader.AssetsService;
-
-            var split = bundleType.FullName?.Split('/');
-            if (split.Length != 4)
+            if (string.IsNullOrEmpty(bundleType.BundleName))
             {
-                Debug.LogError($"Wrong format: {bundleType.FullName} !");
+                Debug.LogError($"No bundle name set up for: {bundleType.FullName} !");
                 return;
             }
 
-            if (assetsService.Bundles.TryGetValue(split[1], out var bundle))
+            if (assetsService.Bundles.TryGetValue(bundleType.BundleName, out var bundle))
             {
                 bundle.OnAssetsChanged -= OnAssetsChanged;
             }
             else
             {
-                Debug.LogError($"No bundle with name: {split[1]}");
+                Debug.LogError($"No bundle with name: {bundleType.BundleName}");
             }
         }
 
-        public void SetCurrentAsset(string[] split, Bundle bundle)
+        public void SetCurrentAsset(Bundle bundle)
         {
-            var atlas = bundle.LoadAsset<SpriteAtlas>(split[2]);
-            if (atlas == null)
+            if (bundle == null)
             {
-                Debug.LogError($"Bundle:{split[0]}/{split[1]} -> no sprite atlas:{split[2]}");
-                LogError(new AssetCallback(AssetErrorType.NULL_SPRITEATLAS, $"Bundle:{split[0]}/{split[1]} -> no sprite atlas:{split[2]}",
-                    $"{split[0]}/{split[1]}", split[2]));
+                Debug.LogError($"Could not set sprite atlas texture, bundle provided was NULL");
                 return;
             }
 
-            var sprite = atlas.GetSprite(split[3]);
+            if (string.IsNullOrEmpty(bundleType.EntityName))
+            {
+                Debug.LogError($"No entity name set up: {bundleType.FullName}!");
+                return;
+            }
+
+            var atlas = bundle.LoadAsset<SpriteAtlas>(bundleType.BundleName);
+            if (atlas == null)
+            {
+                Debug.LogError($"Bundle:{bundleType.RootName}/{bundleType.BundleName} -> no sprite atlas:{bundleType.EntityName}");
+                LogError(new AssetCallback(AssetErrorType.NULL_SPRITEATLAS, $"Bundle:{bundleType.RootName}/{bundleType.BundleName} -> no sprite atlas:{bundleType.EntityName}",
+                    $"{bundleType.RootName}", bundleType.BundleName));
+                return;
+            }
+
+            var sprite = atlas.GetSprite(bundleType.EntityName);
             if (sprite == null)
             {
-                Debug.LogError($"Bundle:{split[0]}/{split[1]}, Sprite atlas: {split[2]} -> no sprite: {split[3]}");
-                LogError(new AssetCallback(AssetErrorType.NULL_SPRITE, $"Bundle:{split[0]}/{split[1]}, Sprite atlas: {split[2]} -> no sprite: {split[3]}",
-                    $"{split[0]}/{split[1]}/{split[2]}", split[3]));
+                Debug.LogError($"Bundle:{bundleType.RootName}/{bundleType.BundleName}, Sprite atlas: {bundleType.BundleName} -> no sprite: {bundleType.EntityName}");
+                LogError(new AssetCallback(AssetErrorType.NULL_SPRITE, $"Bundle:{bundleType.RootName}/{bundleType.BundleName}, " +
+                    $"Sprite atlas: {bundleType.BundleName} -> no sprite: {bundleType.EntityName}",
+                    $"{bundleType.RootName}/{bundleType.BundleName}/{bundleType.BundleName}", bundleType.EntityName));
                 return;
             }
 
@@ -129,14 +142,18 @@ namespace BundlesLoader.Bundles.Loaders
 
         public void OnAssetsChanged(Bundle currentBundle)
         {
-            var split = bundleType.FullName?.Split('/');
-            if (split.Length != 4)
+            if (!IsValidAssetsService())
             {
-                Debug.LogError($"Wrong format: {bundleType.FullName} !");
                 return;
             }
 
-            SetCurrentAsset(split, currentBundle);
+            if (string.IsNullOrEmpty(bundleType.BundleName))
+            {
+                Debug.LogError($"No bundle name set up for: {bundleType.FullName} !");
+                return;
+            }
+
+            SetCurrentAsset(currentBundle);
         }
     }
 }

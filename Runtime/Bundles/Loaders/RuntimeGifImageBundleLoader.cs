@@ -19,21 +19,30 @@ namespace BundlesLoader.Bundles.Loaders
         public bool Initialize(string bundleName, string assetName)
         {
             bundleType.FullName = $"{Symbols.BUNDLES_SUBDIRECTORY}/{bundleName}/{assetName}";
+            bundleType.RootName = Symbols.BUNDLES_SUBDIRECTORY;
+            bundleType.BundleName = bundleName;
+            bundleType.EntityName = assetName;
 
             if (!IsValidAssetsService())
             {
                 return false;
             }
 
+            if (string.IsNullOrEmpty(bundleType.BundleName))
+            {
+                Debug.LogError($"No bundle name set up: {bundleType.FullName}!");
+                return false;
+            }
+
             var assetsService = AssetsServiceLoader.AssetsService;
-            if (assetsService.Bundles.TryGetValue(bundleName, out var bundle))
+            if (assetsService.Bundles.TryGetValue(bundleType.BundleName, out var bundle))
             {
                 bundle.OnAssetsChanged += OnAssetsChanged;
-                return  SetCurrentAsset(bundleType.FullName.Split('/'), bundle);
+                return SetCurrentAsset(bundle);
             }
             else
             {
-                Debug.LogError($"No bundle with name: {bundleName}");
+                Debug.LogError($"No bundle with name: {bundleType.BundleName}");
                 return false;
             }
         }
@@ -46,32 +55,48 @@ namespace BundlesLoader.Bundles.Loaders
             }
 
             var assetsService = AssetsServiceLoader.AssetsService;
-
-            var split = bundleType.FullName?.Split('/');
-            if (split.Length != 3)
+            if (string.IsNullOrEmpty(bundleType.BundleName))
             {
-                Debug.LogError($"Wrong format: {bundleType.FullName} !");
+                Debug.LogError($"No bundle name set up: {bundleType.FullName}!");
                 return;
             }
 
-            if (assetsService.Bundles.TryGetValue(split[1], out var bundle))
+            if (assetsService.Bundles.TryGetValue(bundleType.BundleName, out var bundle))
             {
                 bundle.OnAssetsChanged -= OnAssetsChanged;
             }
             else
             {
-                Debug.LogError($"No bundle with name: {split[1]}");
+                Debug.LogError($"No bundle with name: {bundleType.BundleName}");
             }
         }
 
-        public bool SetCurrentAsset(string[] split, Bundle bundle)
+        public bool SetCurrentAsset(Bundle bundle)
         {
-            var gifAsset = bundle.LoadAsset<TextAsset>(split[2]);
+            if (bundle == null)
+            {
+                Debug.LogError($"Could not set sprite atlas texture, bundle provided was NULL");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(bundleType.BundleName))
+            {
+                Debug.LogError($"No bundle name set up: {bundleType.FullName}!");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(bundleType.EntityName))
+            {
+                Debug.LogError($"No entity name set up: {bundleType.FullName}!");
+                return false;
+            }
+
+            var gifAsset = bundle.LoadAsset<TextAsset>(bundleType.EntityName);
             if (gifAsset == null)
             {
-                Debug.LogError($"Bundle:{split[0]}/{split[1]} -> no gif:{split[2]}");
-                LogError(new AssetCallback(AssetErrorType.NULL_GIF, $"Bundle:{split[0]}/{split[1]} -> no gif:{split[2]}",
-                    $"{split[0]}/{split[1]}", split[2]));
+                Debug.LogError($"Bundle:{bundleType.RootName}/{bundleType.BundleName} -> no gif:{bundleType.EntityName}");
+                LogError(new AssetCallback(AssetErrorType.NULL_GIF, $"Bundle:{bundleType.RootName}/{bundleType.BundleName} -> no gif:{bundleType.EntityName}",
+                    $"{bundleType.RootName}/{bundleType.BundleName}", bundleType.EntityName));
                 return false;
             }
 
@@ -81,14 +106,12 @@ namespace BundlesLoader.Bundles.Loaders
 
         public void OnAssetsChanged(Bundle currentBundle)
         {
-            var split = bundleType.FullName?.Split('/');
-            if (split.Length != 3)
+            if (!IsValidAssetsService())
             {
-                Debug.LogError($"Wrong format: {bundleType.FullName} !");
                 return;
             }
 
-            SetCurrentAsset(split, currentBundle);
+            SetCurrentAsset(currentBundle);
         }
     }
 }

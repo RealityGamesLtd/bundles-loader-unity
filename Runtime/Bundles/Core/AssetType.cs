@@ -62,12 +62,9 @@ namespace BundlesLoader.Bundles.Core
 
             if (IsValidPath(path) == false) return;
 
-            var splitString = path.Split('/');
-
-            BundleName = splitString[1];
-            SpriteAtlasName = splitString[2];
-            AssetName = splitString[3];
-
+            BundleName = bundleName;
+            SpriteAtlasName = spriteAtlasName;
+            AssetName = assetName;
             FullPath = path;
         }
 
@@ -75,8 +72,10 @@ namespace BundlesLoader.Bundles.Core
         {
             if (string.IsNullOrWhiteSpace(path)) return false;
 
-            var splitString = path.Split('/');
-            return splitString.Length == 4;
+            int count = 0;
+            for (int i = 0; i < path.Length; ++i)
+                if (path[i] == '/') count++;
+            return count == 4;
         }
     }
 
@@ -97,7 +96,6 @@ namespace BundlesLoader.Bundles.Core
 
             BundleName = splitString[1];
             AssetName = splitString[2];
-
             FullPath = path;
         }
 
@@ -105,8 +103,10 @@ namespace BundlesLoader.Bundles.Core
         {
             if (string.IsNullOrWhiteSpace(path)) return false;
 
-            var splitString = path.Split('/');
-            return splitString.Length == 3;
+            int count = 0;
+            for(int i = 0; i < path.Length; ++i)
+                if (path[i] == '/') count++;
+            return count == 3;
         }
     }
 }

@@ -17,7 +17,7 @@ namespace BundlesLoader.CustomInspectors
             serializedObject.Update();
             DrawInspector();
 
-            var split = currentPath.stringValue.Split('/');
+            var split = fullPathProperty.stringValue.Split('/');
             if (split.Length != 3)
             {
                 return;
@@ -29,16 +29,27 @@ namespace BundlesLoader.CustomInspectors
 
             if (textAsset == null)
             {
-                Debug.LogError($"No text asset found: {currentPath.stringValue}");
+                Debug.LogError($"No text asset found: {fullPathProperty.stringValue}");
                 return;
             }
 
             serializedObject.ApplyModifiedProperties();
         }
 
+        protected override System.Tuple<string, string, string> GetData()
+        {
+            var split = fullPathProperty.stringValue.Split('/');
+            if (split.Length != 3)
+            {
+                return new System.Tuple<string, string, string>(string.Empty, string.Empty, string.Empty);
+            }
+
+            return new System.Tuple<string, string, string>(split[0], split[1], split[2]);
+        }
+
         protected override string[] SetNames()
         {
-            var obj = currentPath.serializedObject.targetObject as GifBundleLoader;
+            var obj = fullPathProperty.serializedObject.targetObject as GifBundleLoader;
             if (obj == null)
             {
                 Debug.LogError($"No target object with specified type: {nameof(GifBundleLoader)}");

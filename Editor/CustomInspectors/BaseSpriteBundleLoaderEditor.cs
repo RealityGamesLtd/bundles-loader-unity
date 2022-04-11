@@ -24,7 +24,7 @@ namespace BundlesLoader.CustomInspectors
 
         private Sprite GetCurrentSprite()
         {
-            var obj = currentPath.serializedObject.targetObject as T;
+            var obj = fullPathProperty.serializedObject.targetObject as T;
             if (obj != null)
             {
                 var img = obj.GetComponent<Image>();
@@ -42,7 +42,7 @@ namespace BundlesLoader.CustomInspectors
             serializedObject.Update();
             DrawInspector();
 
-            var split = currentPath.stringValue.Split('/');
+            var split = fullPathProperty.stringValue.Split('/');
             if(split.Length != 4)
             {
                 return;
@@ -54,7 +54,7 @@ namespace BundlesLoader.CustomInspectors
 
             if(spriteAtlas == null)
             {
-                Debug.LogError($"No sprite atlas found: {currentPath.stringValue}");
+                Debug.LogError($"No sprite atlas found: {fullPathProperty.stringValue}");
                 return;
             }
 
@@ -62,7 +62,7 @@ namespace BundlesLoader.CustomInspectors
 
             if (sprite == null)
             {
-                Debug.LogError($"No sprite to show: {currentPath.stringValue}");
+                Debug.LogError($"No sprite to show: {fullPathProperty.stringValue}");
                 return;
             }
 
@@ -103,16 +103,27 @@ namespace BundlesLoader.CustomInspectors
 
         private void SetSprite(Sprite value)
         {
-            var obj = currentPath.serializedObject.targetObject as T;
+            var obj = fullPathProperty.serializedObject.targetObject as T;
             if(obj != null)
             {
                 obj.SetSprite(value);
             }
         }
 
+        protected override System.Tuple<string, string, string> GetData()
+        {
+            var split = fullPathProperty.stringValue.Split('/');
+            if (split.Length != 4)
+            {
+                return new System.Tuple<string, string, string>(string.Empty, string.Empty, string.Empty);
+            }
+
+            return new System.Tuple<string, string, string>(split[0], split[1], split[3]);
+        }
+
         protected override string[] SetNames()
         {
-            var obj = currentPath.serializedObject.targetObject as T;
+            var obj = fullPathProperty.serializedObject.targetObject as T;
             if(obj == null)
             {
                 Debug.LogError($"No target object with specified type: {nameof(T)}");
