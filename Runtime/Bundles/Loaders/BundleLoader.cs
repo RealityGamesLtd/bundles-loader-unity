@@ -36,7 +36,7 @@ namespace BundlesLoader.Bundles.Loaders
             return true;
         }
 
-        private void OnValidate()
+        public void OnValidate()
         {
             if (string.IsNullOrEmpty(bundleType.FullName))
             {
