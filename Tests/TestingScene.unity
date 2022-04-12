@@ -152,6 +152,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68f7362e7bc1d441da7ced5429aebec7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  type:
+    Paths:
+      RootName: Bundles
+      BundleName: assets_auctions
+      AssetName: ic_bid_positive
+      FullPath: Bundles/assets_auctions/assets_auctions.spriteatlas/ic_bid_positive
+    FullPath: 
 --- !u!4 &892596326
 Transform:
   m_ObjectHideFlags: 0

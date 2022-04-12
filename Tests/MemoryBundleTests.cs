@@ -21,6 +21,8 @@ namespace Tests
         private Dictionary<string, Bundle> cache;
         private string TESTING_OUTPUT_PATH;
 
+        public AssetType type;
+
         private void Awake()
         {
             TESTING_OUTPUT_PATH = $"{Application.dataPath}/Tests";

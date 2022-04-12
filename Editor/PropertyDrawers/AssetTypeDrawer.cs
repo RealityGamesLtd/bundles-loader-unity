@@ -22,17 +22,18 @@ namespace BundlesLoader.PropertyDrawers
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             var targetObject = property.serializedObject.targetObject;
-            var fullPath = property.FindPropertyRelative("FullPath");
+            var assetType = property.GetValue<AssetType>();
 
-            if (property.GetValue() is AssetType assetType && fullPath != null)
+            if (assetType != null)
             {
-                var val = assetType.Paths?.FullPath ?? fullPath.stringValue ?? string.Empty;
+                var val = assetType.Paths?.FullPath ?? string.Empty;
+
                 Set(val);
                 index = EditorGUI.Popup(position, property.displayName, index, names.ToArray());
                 if (index != -1 && index < names.Count && names[index] != val)
                 {
-                    fullPath.stringValue = names[index];
-                    property.SetValue(new AssetType(GetPathComponents(names[index])));
+                    var type = new AssetType(GetPathComponents(names[index]));
+                    property.SetValue(type);
                     EditorUtility.SetDirty(targetObject);
                 }
             }
