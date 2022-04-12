@@ -54,7 +54,18 @@ namespace BundlesLoader.Service
 
             if (!string.IsNullOrEmpty(name))
             {
-                var asset = Assets.Find(x => x is T && x.name.Equals(name));
+                Object asset = null;
+
+                for(int i = 0; i < Assets.Count; ++i)
+                {
+                    var elem = Assets[i];
+                    if (elem is T && elem.name.Equals(name))
+                    {
+                        asset = elem;
+                        break;
+                    }
+                }
+
                 if (asset != null)
                 {
                     return asset as T;

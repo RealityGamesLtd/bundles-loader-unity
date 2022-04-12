@@ -38,8 +38,12 @@ namespace BundlesLoader.Bundles.Loaders
             }
 
             var bundle = AssetRetriever.GetBundle(bundleName);
-            if (bundle != null)
-                bundle.OnAssetsChanged += OnAssetChanged;
+            if (bundle == null)
+            {
+                Debug.LogError($"Could not get bundle {bundleName}, will not load sprite");
+                return false;
+            }
+
             return SetStandaloneTexture(bundle);
         }
 
@@ -76,7 +80,6 @@ namespace BundlesLoader.Bundles.Loaders
                 return false;
             }
 
-            bundle.OnAssetsChanged += OnAssetChanged;
             return SetSpriteAtlasTexture(bundle);
         }
 
@@ -87,7 +90,7 @@ namespace BundlesLoader.Bundles.Loaders
         /// <returns>True if sprite was found and loaded, false otherwise.</returns>
         public bool LoadSprite(AssetType assetType)
         {
-            var parts = assetType.GetPathComponents();
+            var parts = assetType.Paths;
             bundleType.FullName = parts.FullPath;
             bundleType.RootName = parts.RootName;
             bundleType.BundleName = parts.BundleName;
@@ -107,17 +110,15 @@ namespace BundlesLoader.Bundles.Loaders
             var bundle = AssetRetriever.GetBundle(bundleType.BundleName);
             if (bundle == null)
             {
-                Debug.LogError($"Could not get bundle with path {assetType.FullPath}, will not load sprite");
+                Debug.LogError($"Could not get bundle with path {bundleType.FullName}, will not load sprite");
                 return false;
             }
 
-            bundle.OnAssetsChanged += OnAssetChanged;
-
-            if (parts is SpriteAtlasAssetPathComponents)
+            if (parts is SpriteAtlasAssetPathComponent)
             {
                 return SetSpriteAtlasTexture(bundle);
             }
-            else if (parts is AssetPathComponents)
+            else if (parts is AssetPathComponent)
             {
                 return SetStandaloneTexture(bundle);
             }
@@ -208,51 +209,6 @@ namespace BundlesLoader.Bundles.Loaders
             SetSprite(sprite);
 
             return true;
-        }
-
-        private void OnDestroy()
-        {
-            if (!IsValidAssetsService())
-            {
-                return;
-            }
-
-            if (string.IsNullOrEmpty(bundleType.BundleName))
-            {
-                Debug.LogError($"No bundle name set up: {bundleType.FullName}!");
-                return;
-            }
-
-            var bundle = AssetRetriever.GetBundle(bundleType.BundleName);
-            if (bundle == null)
-            {
-                Debug.LogError($"Could not get bundle with path {bundleType.BundleName}, will not load sprite");
-                return;
-            }
-
-            bundle.OnAssetsChanged -= OnAssetChanged;
-        }
-
-        private void OnAssetChanged(Bundle obj)
-        {
-            if (!IsValidAssetsService())
-            {
-                return;
-            }
-
-            var split = bundleType.FullName.Split('/');
-            if (split.Length == 4)
-            {
-                SetSpriteAtlasTexture(obj);
-            }
-            else if (split.Length == 3)
-            {
-                SetStandaloneTexture(obj);
-            }
-            else
-            {
-                Debug.LogError($"Wrong format: {bundleType.FullName}!");
-            }
         }
     }
 }

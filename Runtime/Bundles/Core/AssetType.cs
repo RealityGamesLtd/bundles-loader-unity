@@ -5,47 +5,38 @@ namespace BundlesLoader.Bundles.Core
     [System.Serializable]
     public class AssetType
     {
+        [SerializeField] public PathComponent Paths;
         [HideInInspector]
         public string FullPath;
 
-        public AssetType(IPathComponents pathComponents)
+        public AssetType(PathComponent pathComponents)
         {
-            FullPath = pathComponents.FullPath;
-        }
-
-        public IPathComponents GetPathComponents()
-        {
-            if (AssetPathComponents.IsValidPath(FullPath)) return new AssetPathComponents(FullPath);
-            if (SpriteAtlasAssetPathComponents.IsValidPath(FullPath)) return new SpriteAtlasAssetPathComponents(FullPath);
-            return null;
+            Paths = pathComponents;
         }
 
         public override string ToString()
         {
-            return FullPath;
+            return Paths.FullPath;
         }
     }
 
-    public interface IPathComponents
+    [System.Serializable]
+    public class PathComponent
     {
-        string RootName { get; }
-        string BundleName { get; }
-        string AssetName { get; }
-        string FullPath { get; }
+        public string RootName;
+        public string BundleName;
+        public string AssetName;
+        public string FullPath;
     }
 
     /// <summary>
     /// Path has 4 elements: Bundles/{BundleName}/{SpriteAtlasName}/{AssetName}
     /// </summary>
-    public struct SpriteAtlasAssetPathComponents : IPathComponents
+    public class SpriteAtlasAssetPathComponent : PathComponent
     {
-        public string RootName { get; set; }
-        public string BundleName { get; set; }
         public string SpriteAtlasName { get; set; }
-        public string AssetName { get; set; }
-        public string FullPath { get; private set; }
 
-        public SpriteAtlasAssetPathComponents(string path) : this()
+        public SpriteAtlasAssetPathComponent(string path)
         {
             if (IsValidPath(path) == false) return;
 
@@ -59,7 +50,7 @@ namespace BundlesLoader.Bundles.Core
             FullPath = path;
         }
 
-        public SpriteAtlasAssetPathComponents(string bundleName, string spriteAtlasName, string assetName) : this()
+        public SpriteAtlasAssetPathComponent(string bundleName, string spriteAtlasName, string assetName)
         {
             var path = $"Bundles/{bundleName}/{spriteAtlasName}.spriteatlas/{assetName}";
 
@@ -85,14 +76,9 @@ namespace BundlesLoader.Bundles.Core
     /// <summary>
     /// Path has 3 elements: Bundles/{BundleName}/{AssetName}
     /// </summary>
-    public struct AssetPathComponents : IPathComponents
+    public class AssetPathComponent : PathComponent
     {
-        public string RootName { get; set; }
-        public string BundleName { get; set; }
-        public string AssetName { get; set; }
-        public string FullPath { get; private set; }
-
-        public AssetPathComponents(string path) : this()
+        public AssetPathComponent(string path)
         {
             if (IsValidPath(path) == false) return;
 
