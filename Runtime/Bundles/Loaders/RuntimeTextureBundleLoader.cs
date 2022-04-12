@@ -114,11 +114,11 @@ namespace BundlesLoader.Bundles.Loaders
                 return false;
             }
 
-            if (parts is SpriteAtlasAssetPathComponent)
+            if (parts.Type == EntityType.ATLAS)
             {
                 return SetSpriteAtlasTexture(bundle);
             }
-            else if (parts is AssetPathComponent)
+            else if (parts.Type == EntityType.STANDALONE)
             {
                 return SetStandaloneTexture(bundle);
             }

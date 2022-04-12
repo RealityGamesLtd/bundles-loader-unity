@@ -2,12 +2,16 @@
 
 namespace BundlesLoader.Bundles.Core
 {
+    public enum EntityType
+    {
+        STANDALONE,
+        ATLAS
+    }
+
     [System.Serializable]
     public class AssetType
     {
         [SerializeField] public PathComponent Paths;
-        [HideInInspector]
-        public string FullPath;
 
         public AssetType(PathComponent pathComponents)
         {
@@ -27,11 +31,13 @@ namespace BundlesLoader.Bundles.Core
         public string BundleName;
         public string AssetName;
         public string FullPath;
+        public EntityType Type;
     }
 
     /// <summary>
     /// Path has 4 elements: Bundles/{BundleName}/{SpriteAtlasName}/{AssetName}
     /// </summary>
+    [System.Serializable]
     public class SpriteAtlasAssetPathComponent : PathComponent
     {
         public string SpriteAtlasName { get; set; }
@@ -42,6 +48,7 @@ namespace BundlesLoader.Bundles.Core
 
             var splitString = path.Split('/');
 
+            Type = EntityType.ATLAS;
             RootName = splitString[0];
             BundleName = splitString[1];
             SpriteAtlasName = splitString[2];
@@ -56,6 +63,7 @@ namespace BundlesLoader.Bundles.Core
 
             if (IsValidPath(path) == false) return;
 
+            Type = EntityType.ATLAS;
             BundleName = bundleName;
             SpriteAtlasName = spriteAtlasName;
             AssetName = assetName;
@@ -76,6 +84,7 @@ namespace BundlesLoader.Bundles.Core
     /// <summary>
     /// Path has 3 elements: Bundles/{BundleName}/{AssetName}
     /// </summary>
+    [System.Serializable]
     public class AssetPathComponent : PathComponent
     {
         public AssetPathComponent(string path)
@@ -84,6 +93,7 @@ namespace BundlesLoader.Bundles.Core
 
             var splitString = path.Split('/');
 
+            Type = EntityType.STANDALONE;
             RootName = splitString[0];
             BundleName = splitString[1];
             AssetName = splitString[2];
