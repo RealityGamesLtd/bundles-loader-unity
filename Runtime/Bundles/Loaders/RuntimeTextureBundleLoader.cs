@@ -21,7 +21,7 @@ namespace BundlesLoader.Bundles.Loaders
         [Obsolete("Use LoadSprite(AssetType) instead")]
         public bool LoadSprite(string bundleName, string spriteName)
         {
-            bundleType.FullName = $"{Symbols.BUNDLES_SUBDIRECTORY}/{bundleName}/{spriteName}";
+            bundleType.FullName = "TEMP";
             bundleType.RootName = Symbols.BUNDLES_SUBDIRECTORY;
             bundleType.BundleName = bundleName;
             bundleType.EntityName = spriteName;
@@ -33,14 +33,14 @@ namespace BundlesLoader.Bundles.Loaders
 
             if (string.IsNullOrEmpty(bundleType.BundleName))
             {
-                Debug.LogError($"No bundle name set up: {bundleType.FullName}!");
+                Debug.LogError($"No bundle name set up: {bundleType.BundleName}!");
                 return false;
             }
 
-            var bundle = AssetRetriever.GetBundle(bundleName);
+            var bundle = AssetRetriever.GetBundle(bundleType.BundleName);
             if (bundle == null)
             {
-                Debug.LogError($"Could not get bundle {bundleName}, will not load sprite");
+                Debug.LogError($"Could not get bundle {bundleType.BundleName}, will not load sprite");
                 return false;
             }
 
@@ -57,7 +57,7 @@ namespace BundlesLoader.Bundles.Loaders
         [Obsolete("Use LoadSprite(AssetType) instead")]
         public bool LoadSprite(string bundleName, string atlasName, string spriteName)
         {
-            bundleType.FullName = $"{Symbols.BUNDLES_SUBDIRECTORY}/{bundleName}/{atlasName}/{spriteName}";
+            bundleType.FullName = "TEMP";
             bundleType.RootName = Symbols.BUNDLES_SUBDIRECTORY;
             bundleType.BundleName = bundleName;
             bundleType.EntityName = spriteName;
@@ -69,14 +69,14 @@ namespace BundlesLoader.Bundles.Loaders
 
             if (string.IsNullOrEmpty(bundleType.BundleName))
             {
-                Debug.LogError($"No bundle name set up: {bundleType.FullName}!");
+                Debug.LogError($"No bundle name set up: {bundleType.BundleName}!");
                 return false;
             }
 
             var bundle = AssetRetriever.GetBundle(bundleType.BundleName);
             if (bundle == null)
             {
-                Debug.LogError($"Could not get bundle {bundleName}, will not load sprite");
+                Debug.LogError($"Could not get bundle {bundleType.BundleName}, will not load sprite");
                 return false;
             }
 
@@ -110,7 +110,7 @@ namespace BundlesLoader.Bundles.Loaders
             var bundle = AssetRetriever.GetBundle(bundleType.BundleName);
             if (bundle == null)
             {
-                Debug.LogError($"Could not get bundle with path {bundleType.FullName}, will not load sprite");
+                Debug.LogError($"Could not get bundle with path {bundleType.BundleName}, will not load sprite");
                 return false;
             }
 
@@ -139,13 +139,13 @@ namespace BundlesLoader.Bundles.Loaders
 
             if (string.IsNullOrEmpty(bundleType.BundleName))
             {
-                Debug.LogError($"No bundle name set up: {bundleType.FullName}!");
+                Debug.LogError($"No bundle name set up for runtime texture: {bundle.Name}!");
                 return false;
             }
 
             if (string.IsNullOrEmpty(bundleType.EntityName))
             {
-                Debug.LogError($"No entity name set up: {bundleType.FullName}!");
+                Debug.LogError($"No entity name set up for runtime texture: {bundle.Name}!");
                 return false;
             }
 
