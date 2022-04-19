@@ -38,6 +38,15 @@ namespace BundlesLoader.Bundles.Loaders.ImageLoader
             }
 
             image.sprite = sprite;
+
+            if (sprite == null || rectTransform == null)
+                return;
+
+            if(image.type == Image.Type.Sliced)
+            {
+                image.pixelsPerUnitMultiplier = Mathf.Clamp(image.sprite.rect.height /
+                    Mathf.Clamp(rectTransform.rect.height, 1, rectTransform.rect.height), 0f, 3.5f);
+            }
         }
     }
 }

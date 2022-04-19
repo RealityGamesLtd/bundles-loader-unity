@@ -10,6 +10,13 @@ namespace BundlesLoader.Bundles.Loaders
 
         public BundleType BundleType { get => bundleType; }
 
+        protected RectTransform rectTransform;
+
+        private void Awake()
+        {
+            rectTransform = GetComponent<RectTransform>();
+        }
+
         public void LogError(IEntityCallback callback) => AssetsServiceLoader.AssetsService.LogErrorAsset(callback);
 
         protected bool IsValidAssetsService()
