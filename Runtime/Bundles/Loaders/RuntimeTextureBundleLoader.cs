@@ -25,11 +25,13 @@ namespace BundlesLoader.Bundles.Loaders
             bundleType.RootName = Symbols.BUNDLES_SUBDIRECTORY;
             bundleType.BundleName = bundleName;
             bundleType.EntityName = spriteName;
+            bundleType.Type = EntityType.STANDALONE;
 
             if (!IsValidAssetsService())
             {
                 return false;
             }
+
 
             if (string.IsNullOrEmpty(bundleType.BundleName))
             {
@@ -43,6 +45,7 @@ namespace BundlesLoader.Bundles.Loaders
                 Debug.LogError($"Could not get bundle {bundleType.BundleName}, will not load sprite");
                 return false;
             }
+            bundle.OnAssetsChanged += OnAssetChanged;
 
             return SetStandaloneTexture(bundle);
         }
@@ -61,6 +64,7 @@ namespace BundlesLoader.Bundles.Loaders
             bundleType.RootName = Symbols.BUNDLES_SUBDIRECTORY;
             bundleType.BundleName = bundleName;
             bundleType.EntityName = spriteName;
+            bundleType.Type = EntityType.ATLAS;
 
             if (!IsValidAssetsService())
             {
@@ -79,6 +83,7 @@ namespace BundlesLoader.Bundles.Loaders
                 Debug.LogError($"Could not get bundle {bundleType.BundleName}, will not load sprite");
                 return false;
             }
+            bundle.OnAssetsChanged += OnAssetChanged;
 
             return SetSpriteAtlasTexture(bundle);
         }
@@ -95,6 +100,7 @@ namespace BundlesLoader.Bundles.Loaders
             bundleType.RootName = parts.RootName;
             bundleType.BundleName = parts.BundleName;
             bundleType.EntityName = parts.AssetName;
+            bundleType.Type = parts.Type;
 
             if (!IsValidAssetsService())
             {
@@ -114,11 +120,13 @@ namespace BundlesLoader.Bundles.Loaders
                 return false;
             }
 
-            if (parts.Type == EntityType.ATLAS)
+            bundle.OnAssetsChanged += OnAssetChanged;
+
+            if (bundleType.Type == EntityType.ATLAS)
             {
                 return SetSpriteAtlasTexture(bundle);
             }
-            else if (parts.Type == EntityType.STANDALONE)
+            else if (bundleType.Type == EntityType.STANDALONE)
             {
                 return SetStandaloneTexture(bundle);
             }
@@ -209,6 +217,50 @@ namespace BundlesLoader.Bundles.Loaders
             SetSprite(sprite);
 
             return true;
+        }
+
+        private void OnDestroy()
+        {
+            if (!IsValidAssetsService())
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(bundleType.BundleName))
+            {
+                Debug.LogError($"No bundle name set up: {bundleType.FullName}!");
+                return;
+            }
+
+            var bundle = AssetRetriever.GetBundle(bundleType.BundleName);
+            if (bundle == null)
+            {
+                Debug.LogError($"Could not get bundle with path {bundleType.BundleName}, will not load sprite");
+                return;
+            }
+
+            bundle.OnAssetsChanged -= OnAssetChanged;
+        }
+
+        private void OnAssetChanged(Bundle obj)
+        {
+            if (!IsValidAssetsService())
+            {
+                return;
+            }
+
+            if (bundleType.Type == EntityType.ATLAS)
+            {
+                SetSpriteAtlasTexture(obj);
+            }
+            else if (bundleType.Type == EntityType.STANDALONE)
+            {
+                SetStandaloneTexture(obj);
+            }
+            else
+            {
+                Debug.LogError($"Wrong format: {bundleType.FullName}!");
+            }
         }
     }
 }

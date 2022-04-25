@@ -2,12 +2,6 @@
 
 namespace BundlesLoader.Bundles.Core
 {
-    public enum EntityType
-    {
-        STANDALONE,
-        ATLAS
-    }
-
     [System.Serializable]
     public class AssetType
     {
@@ -22,16 +16,6 @@ namespace BundlesLoader.Bundles.Core
         {
             return Paths.FullPath;
         }
-    }
-
-    [System.Serializable]
-    public class PathComponent
-    {
-        public string RootName;
-        public string BundleName;
-        public string AssetName;
-        public string FullPath;
-        public EntityType Type;
     }
 
     /// <summary>

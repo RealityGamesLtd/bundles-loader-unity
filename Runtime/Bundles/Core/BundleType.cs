@@ -10,5 +10,6 @@ namespace BundlesLoader.Bundles.Core
         public string RootName;
         public string BundleName;
         public string EntityName;
+        public EntityType Type;
     }
 }
