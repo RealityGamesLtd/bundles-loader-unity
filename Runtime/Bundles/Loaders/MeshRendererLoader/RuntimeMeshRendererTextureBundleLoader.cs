@@ -9,6 +9,7 @@ namespace BundlesLoader.Bundles.Loaders.MeshRendererLoader
 
         protected override void SetSprite(Sprite sprite)
         {
+            base.SetSprite(sprite);
             if (meshRenderer == null) meshRenderer = GetComponent<MeshRenderer>();
 
             if (meshRenderer == null) return;

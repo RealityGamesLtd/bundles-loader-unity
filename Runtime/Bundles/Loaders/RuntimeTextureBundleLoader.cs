@@ -10,7 +10,16 @@ namespace BundlesLoader.Bundles.Loaders
 {
     public abstract class RuntimeTextureBundleLoader : BundleLoader
     {
-        protected abstract void SetSprite(Sprite sprite);
+        protected Sprite sprite;
+
+        /// <summary>
+        /// Sets current sprite
+        /// </summary>
+        /// <param name="sprite">Current sprite</param>
+        protected virtual void SetSprite(Sprite sprite)
+        {
+            this.sprite = sprite;
+        }
 
         /// <summary>
         /// 
@@ -21,6 +30,13 @@ namespace BundlesLoader.Bundles.Loaders
         [Obsolete("Use LoadSprite(AssetType) instead")]
         public bool LoadSprite(string bundleName, string spriteName)
         {
+            if(sprite != null && bundleType != null)
+            {
+                //Check if sprite has changed, if not do not GetSprite() from atlas again!
+                var hasChanged = spriteName != bundleType.EntityName;
+                if (!hasChanged) SetSprite(sprite);
+            }
+
             bundleType.FullName = "TEMP";
             bundleType.RootName = Symbols.BUNDLES_SUBDIRECTORY;
             bundleType.BundleName = bundleName;
@@ -31,7 +47,6 @@ namespace BundlesLoader.Bundles.Loaders
             {
                 return false;
             }
-
 
             if (string.IsNullOrEmpty(bundleType.BundleName))
             {
@@ -60,6 +75,13 @@ namespace BundlesLoader.Bundles.Loaders
         [Obsolete("Use LoadSprite(AssetType) instead")]
         public bool LoadSprite(string bundleName, string atlasName, string spriteName)
         {
+            if (sprite != null && bundleType != null)
+            {
+                //Check if sprite has changed, if not do not GetSprite() from atlas again!
+                var hasChanged = spriteName != bundleType.EntityName;
+                if (!hasChanged) SetSprite(sprite);
+            }
+
             bundleType.FullName = "TEMP";
             bundleType.RootName = Symbols.BUNDLES_SUBDIRECTORY;
             bundleType.BundleName = bundleName;
@@ -96,6 +118,13 @@ namespace BundlesLoader.Bundles.Loaders
         public bool LoadSprite(AssetType assetType)
         {
             var parts = assetType.Paths;
+            if (sprite != null && bundleType != null)
+            {
+                //Check if sprite has changed, if not do not GetSprite() from atlas again!
+                var hasChanged = parts.AssetName != bundleType.EntityName;
+                if (!hasChanged) SetSprite(sprite);
+            }
+
             bundleType.FullName = parts.FullPath;
             bundleType.RootName = parts.RootName;
             bundleType.BundleName = parts.BundleName;

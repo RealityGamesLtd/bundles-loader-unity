@@ -8,30 +8,9 @@ namespace BundlesLoader.Bundles.Loaders.ImageLoader
     {
         private Image image;
 
-        public Sprite sprite
-        {
-            get
-            {
-                if (image == null)
-                {
-                    image = GetComponent<Image>();
-                }
-
-                return image.sprite;
-            }
-            set
-            {
-                if (image == null)
-                {
-                    image = GetComponent<Image>();
-                }
-
-                image.sprite = value;
-            }
-        }
-
         protected override void SetSprite(Sprite sprite)
         {
+            base.SetSprite(sprite);
             if (image == null)
             {
                 image = GetComponent<Image>();

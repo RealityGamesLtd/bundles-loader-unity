@@ -9,6 +9,8 @@ namespace BundlesLoader.Bundles.Loaders.SpriteRendererLoader
 
         protected override void SetSprite(Sprite sprite)
         {
+            base.SetSprite(sprite);
+
             if (spriteRenderer == null)
             {
                 spriteRenderer = GetComponent<SpriteRenderer>();
