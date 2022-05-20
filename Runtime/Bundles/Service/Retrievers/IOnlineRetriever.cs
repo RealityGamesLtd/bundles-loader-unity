@@ -12,6 +12,14 @@ using Newtonsoft.Json;
 
 namespace BundlesLoader.Service.Retrievers
 {
+    public class NoCertHandler : CertificateHandler
+    {
+        protected override bool ValidateCertificate(byte[] certificateData)
+        {
+            return true;
+        }
+    }
+
     public class IOnlineRetriever : Retriever, IBundleRetriever
     {
         private const int CACHE_COUNT_MAX = 1;
@@ -132,6 +140,8 @@ namespace BundlesLoader.Service.Retrievers
             }
 
             using var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, parsedHash);
+            uwr.certificateHandler = new NoCertHandler();
+            uwr.disposeCertificateHandlerOnDispose = false;
             uwr.SendWebRequest();
 
             while (!uwr.isDone)
