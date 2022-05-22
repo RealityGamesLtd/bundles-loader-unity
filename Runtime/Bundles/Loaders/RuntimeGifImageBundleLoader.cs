@@ -38,7 +38,7 @@ namespace BundlesLoader.Bundles.Loaders
             if (assetsService.Bundles.TryGetValue(bundleType.BundleName, out var bundle))
             {
                 bundle.OnAssetsChanged += OnAssetsChanged;
-                return SetCurrentAsset(bundle);
+                return SetCurrentAsset(bundle, false);
             }
             else
             {
@@ -71,7 +71,7 @@ namespace BundlesLoader.Bundles.Loaders
             }
         }
 
-        public bool SetCurrentAsset(Bundle bundle)
+        public bool SetCurrentAsset(Bundle bundle, bool forceSwap)
         {
             if (bundle == null)
             {
@@ -100,7 +100,7 @@ namespace BundlesLoader.Bundles.Loaders
                 return false;
             }
 
-            gifImage.Load(gifAsset.bytes);
+            gifImage.Initialize(GifConverter.LoadGifTexture(bundleType.EntityName, gifAsset.bytes, forceSwap));
             return true;
         }
 
@@ -111,7 +111,7 @@ namespace BundlesLoader.Bundles.Loaders
                 return;
             }
 
-            SetCurrentAsset(currentBundle);
+            SetCurrentAsset(currentBundle, true);
         }
     }
 }

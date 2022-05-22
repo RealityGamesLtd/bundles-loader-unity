@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using ThreeDISevenZeroR.UnityGifDecoder;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,8 +8,8 @@ namespace BundlesLoader.Gif
     public class GifImage : MonoBehaviour
     {
         private RawImage img;
-        private readonly List<Texture> frames = new List<Texture>();
-        private readonly List<float> frameDelays = new List<float>();
+        private List<Texture> frames = new List<Texture>();
+        private List<float> frameDelays = new List<float>();
         private bool isPlaying;
         private bool isOneShot;
         private int index;
@@ -19,6 +18,13 @@ namespace BundlesLoader.Gif
         private void Awake()
         {
             img = GetComponent<RawImage>();
+        }
+
+        public void Initialize(GifData<Texture> gifData)
+        {
+            frames = gifData.Frames;
+            frameDelays = gifData.Delays;
+            Play();
         }
 
         private void Update()
@@ -44,39 +50,6 @@ namespace BundlesLoader.Gif
                     }
                 }
             }
-        }
-
-        public void Load(byte[] gif)
-        {
-            using var gifStream = new GifStream(gif);
-            while (gifStream.HasMoreData)
-            {
-                switch (gifStream.CurrentToken)
-                {
-                    case GifStream.Token.Image:
-                        var image = gifStream.ReadImage();
-                        var frame = new Texture2D(
-                            gifStream.Header.width,
-                            gifStream.Header.height,
-                            TextureFormat.ARGB32, false);
-
-                        frame.SetPixels32(image.colors);
-                        frame.Apply();
-
-                        frames.Add(frame);
-                        frameDelays.Add(image.SafeDelaySeconds);
-                        break;
-
-                    case GifStream.Token.Comment:
-                        break;
-
-                    default:
-                        gifStream.SkipToken();
-                        break;
-                }
-            }
-
-            Play();
         }
 
         public void Play()

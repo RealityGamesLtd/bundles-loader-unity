@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using ThreeDISevenZeroR.UnityGifDecoder;
 using UnityEngine;
 
 namespace BundlesLoader.Gif
@@ -8,8 +7,8 @@ namespace BundlesLoader.Gif
     public class GifSprite : MonoBehaviour
     {
         private SpriteRenderer img;
-        private readonly List<Sprite> frames = new List<Sprite>();
-        private readonly List<float> frameDelays = new List<float>();
+        private List<Sprite> frames = new List<Sprite>();
+        private List<float> frameDelays = new List<float>();
         private bool isPlaying;
         private bool isOneShot;
         private int index;
@@ -18,6 +17,13 @@ namespace BundlesLoader.Gif
         private void Awake()
         {
             img = GetComponent<SpriteRenderer>();
+        }
+
+        public void Initialize(GifData<Sprite> gifData)
+        {
+            frames = gifData.Frames;
+            frameDelays = gifData.Delays;
+            Play();
         }
 
         private void Update()
@@ -43,42 +49,6 @@ namespace BundlesLoader.Gif
                     }
                 }
             }
-        }
-
-        public void Load(byte[] gif)
-        {
-            using var gifStream = new GifStream(gif);
-            while (gifStream.HasMoreData)
-            {
-                switch (gifStream.CurrentToken)
-                {
-                    case GifStream.Token.Image:
-                        var image = gifStream.ReadImage();
-                        var frame = new Texture2D(
-                            gifStream.Header.width,
-                            gifStream.Header.height,
-                            TextureFormat.ARGB32, false);
-
-                        frame.SetPixels32(image.colors);
-                        frame.Apply();
-
-                        frames.Add(Sprite.Create(frame,
-                            new Rect(0.0f, 0.0f, frame.width, frame.height),
-                            new Vector2(0.5f, 0.5f), 100.0f, 0,
-                            SpriteMeshType.FullRect));
-                        frameDelays.Add(image.SafeDelaySeconds);
-                        break;
-
-                    case GifStream.Token.Comment:
-                        break;
-
-                    default:
-                        gifStream.SkipToken();
-                        break;
-                }
-            }
-
-            Play();
         }
 
         public void Play()
