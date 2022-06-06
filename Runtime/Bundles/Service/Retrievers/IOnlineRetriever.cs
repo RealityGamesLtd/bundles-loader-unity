@@ -24,11 +24,12 @@ namespace BundlesLoader.Service.Retrievers
     {
         private const int CACHE_COUNT_MAX = 1;
         private const string BUNDLES_SUBDIRECTORY = "Bundles";
+        private const int TIMEOUT_TIME_SECONDS = 10;
 
         public Action<float> ProgressCallback { get; private set; }
         public Action<IEntityCallback> BundleLoadedCallback { get; set; }
 
-        private string AssetBundleVersionDirectory;
+        private readonly string AssetBundleVersionDirectory;
 
         public IOnlineRetriever(Dictionary<string, BundleVersion> versions, string assetBundleVersionDirectory,
             string assetBundlesUrl, Action<float> progressCallback)
@@ -140,18 +141,30 @@ namespace BundlesLoader.Service.Retrievers
             }
 
             using var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, parsedHash);
+            uwr.timeout = TIMEOUT_TIME_SECONDS;
             uwr.certificateHandler = new NoCertHandler();
-            uwr.disposeCertificateHandlerOnDispose = false;
+            uwr.disposeCertificateHandlerOnDispose = true;
+            uwr.disposeDownloadHandlerOnDispose = true;
             uwr.SendWebRequest();
 
-            while (!uwr.isDone)
+            while (!uwr.isDone && !ct.IsCancellationRequested)
                 await Task.Yield();
 
-            if (ct.IsCancellationRequested || uwr.result != UnityWebRequest.Result.Success)
+            if (ct.IsCancellationRequested)
+            {
+                Debug.LogError($"ONLINE PROVIDER: Bundle {name} getting failed due canceled task!");
+                BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE, BundleErrorType.FAILED,
+                    $"Bundle {name} getting failed due canceled task!", name));
+                uwr.Abort();
+                return new Tuple<string, Bundle>(name, null);
+            }
+
+            if (uwr.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError($"ONLINE PROVIDER: Bundle {name} getting failed due to error: {uwr.error}!");
-                BundleLoadedCallback?.Invoke(
-                    new BundleCallback(RetrieverType.ONLINE, BundleErrorType.FAILED, $"Bundle {name} getting failed due to error: {uwr.error}!", name));
+                BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE, BundleErrorType.FAILED,
+                    $"Bundle {name} getting failed due to error: {uwr.error}!", name));
+                uwr.Dispose();
                 return new Tuple<string, Bundle>(name, null);
             }
 
@@ -161,6 +174,7 @@ namespace BundlesLoader.Service.Retrievers
                 Debug.LogError($"ONLINE PROVIDER: Failed to get bundle: {name}, directory to read from doesn't exist!" + handlerError);
                 BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE,
                     BundleErrorType.FAILED, $"Bundle: {name} - failed to get bundle content, directory to read from doesn't exist!", name));
+                uwr.Dispose();
                 return new Tuple<string, Bundle>(name, null);
             }
 
@@ -173,11 +187,13 @@ namespace BundlesLoader.Service.Retrievers
                 Debug.LogError($"ONLINE PROVIDER: Failed to get bundle: {name}, due to bundle is null!" +
                      $"Message: {uwr.downloadHandler.error}");
                 BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE, BundleErrorType.NULL_BUNDLE, $"{name} no bundle downloaded!", name));
+                uwr.Dispose();
                 return new Tuple<string, Bundle>(name, null);
             }
             else
             {
                 LogRequestResponseStatus(name, uwr);
+                uwr.Dispose();
 
                 var assets = bundle.GetAllAssetNames();
                 if (assets == null || assets.Length == 0)

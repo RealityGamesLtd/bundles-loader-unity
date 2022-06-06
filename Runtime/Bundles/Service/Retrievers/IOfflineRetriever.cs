@@ -99,8 +99,8 @@ namespace BundlesLoader.Service.Retrievers
                 AssetBundleCreateRequest fileTask = null;
                 try
                 {
-                    fileTask = AssetBundle.LoadFromFileAsync(
-                        Path.Combine(Path.Combine(Application.streamingAssetsPath, Symbols.BUNDLES_SUBDIRECTORY), name));
+                    fileTask = AssetBundle.LoadFromFileAsync(Path.Combine(Path.Combine(Application.streamingAssetsPath,
+                        Symbols.BUNDLES_SUBDIRECTORY), name));
                 }
                 catch (Exception e)
                 {
@@ -136,16 +136,29 @@ namespace BundlesLoader.Service.Retrievers
             {
                 var parsedHash = listOfCachedVersions.Last();
                 var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, listOfCachedVersions.Last());
+                uwr.certificateHandler = new NoCertHandler();
+                uwr.disposeCertificateHandlerOnDispose = true;
+                uwr.disposeDownloadHandlerOnDispose = true;
                 uwr.SendWebRequest();
 
-                while (!uwr.isDone)
+                while (!uwr.isDone && !ct.IsCancellationRequested)
                     await Task.Yield();
 
-                if (ct.IsCancellationRequested || uwr.result != UnityWebRequest.Result.Success)
+                if (ct.IsCancellationRequested)
+                {
+                    Debug.LogError($"OFFLINE PROVIDER: Bundle {name} getting failed due canceled task!");
+                    BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE, BundleErrorType.FAILED,
+                        $"Bundle {name} getting failed due canceled task!", name));
+                    uwr.Abort();
+                    return new Tuple<string, Bundle>(name, null);
+                }
+
+                if (uwr.result != UnityWebRequest.Result.Success)
                 {
                     Debug.LogError($"OFFLINE PROVIDER: Bundle {name} loading canceled due to error: {uwr.error}!");
                     BundleLoadedCallback?.Invoke(
                         new BundleCallback(RetrieverType.OFFLINE, BundleErrorType.FAILED, $"Bundle {name} getting error:{uwr.error}!", name));
+                    uwr.Dispose();
                     return new Tuple<string, Bundle>(name, null);
                 }
 
@@ -155,6 +168,7 @@ namespace BundlesLoader.Service.Retrievers
                     Debug.LogError($"OFFLINE PROVIDER: Failed to get bundle: {name}, directory to read from doesn't exist!" + handlerError);
                     BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE,
                         BundleErrorType.FAILED, $"Bundle: {name} - failed to get bundle content, directory to read from doesn't exist!", name));
+                    uwr.Dispose();
                     return new Tuple<string, Bundle>(name, null);
                 }
 
@@ -174,13 +188,17 @@ namespace BundlesLoader.Service.Retrievers
                     {
                         Debug.LogError($"OFFLINE PROVIDER: Bundle: {name}, is empty!");
                         BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.OFFLINE, BundleErrorType.EMPTY_BUNDLE, $"{name} bundle is empty!", name));
+                        uwr.Dispose();
                         return new Tuple<string, Bundle>(name, null);
                     }
 
                     var res = await LoadAssets(bundle);
                     loadedBundle = new Tuple<string, Bundle>(name, new Bundle(res, name, listOfCachedVersions.ToString()));
                 }
+
+                uwr.Dispose();
             }
+
             return loadedBundle;
         }
 
