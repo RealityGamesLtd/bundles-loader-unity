@@ -140,7 +140,7 @@ namespace BundlesLoader.Service.Retrievers
                 Debug.LogWarning($"ONLINE PROVIDER: Bundle {name} no cached version founded for this hash: {hash}...");
             }
 
-            using var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, parsedHash);
+            var uwr = UnityWebRequestAssetBundle.GetAssetBundle(url, parsedHash);
             uwr.timeout = TIMEOUT_TIME_SECONDS;
             uwr.certificateHandler = new NoCertHandler();
             uwr.disposeCertificateHandlerOnDispose = true;
@@ -156,6 +156,9 @@ namespace BundlesLoader.Service.Retrievers
                 BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE, BundleErrorType.FAILED,
                     $"Bundle {name} getting failed due canceled task!", name));
                 uwr.Abort();
+                uwr.Dispose();
+                uwr = null;
+
                 return new Tuple<string, Bundle>(name, null);
             }
 
@@ -165,6 +168,8 @@ namespace BundlesLoader.Service.Retrievers
                 BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE, BundleErrorType.FAILED,
                     $"Bundle {name} getting failed due to error: {uwr.error}!", name));
                 uwr.Dispose();
+                uwr = null;
+
                 return new Tuple<string, Bundle>(name, null);
             }
 
@@ -175,6 +180,8 @@ namespace BundlesLoader.Service.Retrievers
                 BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE,
                     BundleErrorType.FAILED, $"Bundle: {name} - failed to get bundle content, directory to read from doesn't exist!", name));
                 uwr.Dispose();
+                uwr = null;
+
                 return new Tuple<string, Bundle>(name, null);
             }
 
@@ -188,12 +195,15 @@ namespace BundlesLoader.Service.Retrievers
                      $"Message: {uwr.downloadHandler.error}");
                 BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE, BundleErrorType.NULL_BUNDLE, $"{name} no bundle downloaded!", name));
                 uwr.Dispose();
+                uwr = null;
+
                 return new Tuple<string, Bundle>(name, null);
             }
             else
             {
                 LogRequestResponseStatus(name, uwr);
                 uwr.Dispose();
+                uwr = null;
 
                 var assets = bundle.GetAllAssetNames();
                 if (assets == null || assets.Length == 0)

@@ -150,6 +150,9 @@ namespace BundlesLoader.Service.Retrievers
                     BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE, BundleErrorType.FAILED,
                         $"Bundle {name} getting failed due canceled task!", name));
                     uwr.Abort();
+                    uwr.Dispose();
+                    uwr = null;
+
                     return new Tuple<string, Bundle>(name, null);
                 }
 
@@ -159,6 +162,8 @@ namespace BundlesLoader.Service.Retrievers
                     BundleLoadedCallback?.Invoke(
                         new BundleCallback(RetrieverType.OFFLINE, BundleErrorType.FAILED, $"Bundle {name} getting error:{uwr.error}!", name));
                     uwr.Dispose();
+                    uwr = null;
+
                     return new Tuple<string, Bundle>(name, null);
                 }
 
@@ -169,6 +174,8 @@ namespace BundlesLoader.Service.Retrievers
                     BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.ONLINE,
                         BundleErrorType.FAILED, $"Bundle: {name} - failed to get bundle content, directory to read from doesn't exist!", name));
                     uwr.Dispose();
+                    uwr = null;
+
                     return new Tuple<string, Bundle>(name, null);
                 }
 
@@ -189,6 +196,8 @@ namespace BundlesLoader.Service.Retrievers
                         Debug.LogError($"OFFLINE PROVIDER: Bundle: {name}, is empty!");
                         BundleLoadedCallback?.Invoke(new BundleCallback(RetrieverType.OFFLINE, BundleErrorType.EMPTY_BUNDLE, $"{name} bundle is empty!", name));
                         uwr.Dispose();
+                        uwr = null;
+
                         return new Tuple<string, Bundle>(name, null);
                     }
 
@@ -197,6 +206,7 @@ namespace BundlesLoader.Service.Retrievers
                 }
 
                 uwr.Dispose();
+                uwr = null;
             }
 
             return loadedBundle;
