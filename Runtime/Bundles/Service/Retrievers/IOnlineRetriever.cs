@@ -24,7 +24,7 @@ namespace BundlesLoader.Service.Retrievers
     {
         private const int CACHE_COUNT_MAX = 1;
         private const string BUNDLES_SUBDIRECTORY = "Bundles";
-        private const int TIMEOUT_TIME_SECONDS = 10;
+        private const int TIMEOUT_TIME_SECONDS = 20;
 
         public Action<float> ProgressCallback { get; private set; }
         public Action<IEntityCallback> BundleLoadedCallback { get; set; }
