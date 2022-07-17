@@ -96,6 +96,8 @@ namespace BundlesLoader.Service.Retrievers
             //If no cached bundles are present and we are offline (First game run)
             if (!useCached)
             {
+                UnloadCurrentBundle(name);
+
                 AssetBundleCreateRequest fileTask = null;
                 try
                 {
@@ -121,8 +123,7 @@ namespace BundlesLoader.Service.Retrievers
 
                     if (bundle != null)
                     {
-                        var res = await LoadAssets(bundle);
-                        loadedBundle = new Tuple<string, Bundle>(name, new Bundle(res, name, hash));
+                        loadedBundle = new Tuple<string, Bundle>(name, new Bundle(bundle, name, hash));
                     }
                     else
                     {
@@ -201,8 +202,7 @@ namespace BundlesLoader.Service.Retrievers
                         return new Tuple<string, Bundle>(name, null);
                     }
 
-                    var res = await LoadAssets(bundle);
-                    loadedBundle = new Tuple<string, Bundle>(name, new Bundle(res, name, listOfCachedVersions.ToString()));
+                    loadedBundle = new Tuple<string, Bundle>(name, new Bundle(bundle, name, listOfCachedVersions.ToString()));
                 }
 
                 uwr.Dispose();
