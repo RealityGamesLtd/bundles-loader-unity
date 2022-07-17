@@ -114,7 +114,10 @@ namespace Tests
                 var nextHash = bundle.Hash;
                 if (!nextHash.Equals(currentHash))
                 {
-                    cache[name].Update(bundle);
+                    if (bundle.Assets != null)
+                        cache[name].Update(bundle.Assets, bundle.Hash);
+                    else
+                        Debug.LogError($"New bundle: {name}, has null asset value, omitting puting into dictionary!");
                 }
             }
             else

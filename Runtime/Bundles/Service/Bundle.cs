@@ -1,7 +1,8 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 using System.IO;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
 
 namespace BundlesLoader.Service
 {
@@ -9,26 +10,54 @@ namespace BundlesLoader.Service
     {
         public System.Action<Bundle> OnAssetsChanged;
 
-        public Dictionary<string, Object> Assets { get; private set; }
-        public AssetBundle AssetBundle { get; private set; }
+        public Dictionary<string, Object> Assets { get; private set; } = new Dictionary<string, Object>();
         public string Name { get; private set; }
         public string Hash { get; private set; }
 
-        public Bundle(AssetBundle bundle, string name, string hash)
+        public Bundle(Object[] assets, string name, string hash)
         {
-            Assets = new Dictionary<string, Object>();
-            AssetBundle = bundle;
+            Refresh(assets.ToList());
             Name = name;
             Hash = hash;
         }
 
-        public void Update(Bundle bundle)
+        public void Update(Dictionary<string, Object> objects, string hash)
         {
-            Hash = bundle.Hash;
-            Assets.Clear();
-            AssetBundle = bundle.AssetBundle;
+            Refresh(objects);
+            Hash = hash;
 
             OnAssetsChanged?.Invoke(this);
+        }
+
+        private void Refresh(List<Object> objects)
+        {
+            for (int i = 0; i < objects.Count; ++i)
+            {
+                AddEntry(objects[i]);
+            }
+        }
+
+        private void Refresh(Dictionary<string, Object> objects)
+        {
+            foreach(var pair in  objects)
+            {
+                AddEntry(pair.Value);
+            }
+        }
+
+        private void AddEntry(Object obj)
+        {
+            var name = obj.name;
+            if (Assets.TryGetValue(name, out var asset))
+            {
+                if (asset != null)
+                    Object.Destroy(asset);
+                Assets[name] = obj;
+            }
+            else
+            {
+                Assets.Add(name, obj);
+            }
         }
 
         public override string ToString()
@@ -55,16 +84,19 @@ namespace BundlesLoader.Service
                 }
             }
 
-            if (Assets.TryGetValue(name, out var elem))
-            {
-                if (elem is T t) return t;
-            }
-
             if (!string.IsNullOrEmpty(name))
             {
-                var res = AssetBundle.LoadAsset<T>(assetName);
-                Assets.Add(name, res);
-                return res;
+                Object asset = null;
+
+                if (Assets.TryGetValue(name, out var elem))
+                {
+                    if (elem is T) asset = elem;
+                }
+
+                if (asset != null)
+                {
+                    return asset as T;
+                }
             }
 
             return null;
