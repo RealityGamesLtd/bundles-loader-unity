@@ -44,14 +44,11 @@ namespace BundlesLoader
                 var assets = bundle.Value.Assets;
                 if (assets != null)
                 {
-                    if(assets.Count > 0)
-                    {
-                        var obj = assets.First().Value;
-                        if (obj is SpriteAtlas atl)
-                            ret = CheckForSpriteInAtlas(name, atl);
-                        else
-                            ret = CheckForTexture(name, assets);
-                    }
+                    var obj = assets.First().Value;
+                    if (obj is SpriteAtlas atl)
+                        ret = CheckForSpriteInAtlas(name, atl);
+                    else
+                        ret = CheckForTexture(name, assets);
                 }
 
                 if (ret)
