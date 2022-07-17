@@ -57,13 +57,18 @@ namespace BundlesLoader.Service
 
             if (Assets.TryGetValue(name, out var elem))
             {
-                if (elem is T t) return t;
+                if (elem is T t)
+                    return t;
             }
 
             if (!string.IsNullOrEmpty(name))
             {
                 var res = AssetBundle.LoadAsset<T>(assetName);
-                Assets.Add(name, res);
+                if (!Assets.ContainsKey(name))
+                {
+                    Assets.Add(name, res);
+                }
+
                 return res;
             }
 
