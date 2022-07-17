@@ -8,56 +8,24 @@ namespace BundlesLoader.Service
 {
     public class Bundle
     {
-        public System.Action<Bundle> OnAssetsChanged;
-
-        public Dictionary<string, Object> Assets { get; private set; } = new Dictionary<string, Object>();
+        public List<Object> Assets { get; private set; }
         public string Name { get; private set; }
         public string Hash { get; private set; }
+        public System.Action<Bundle> OnAssetsChanged { get; set; }
 
         public Bundle(Object[] assets, string name, string hash)
         {
-            Refresh(assets.ToList());
+            Assets = assets.ToList();
             Name = name;
             Hash = hash;
         }
 
-        public void Update(Dictionary<string, Object> objects, string hash)
+        public void Update(List<Object> objects, string hash)
         {
-            Refresh(objects);
+            Assets = objects;
             Hash = hash;
 
             OnAssetsChanged?.Invoke(this);
-        }
-
-        private void Refresh(List<Object> objects)
-        {
-            for (int i = 0; i < objects.Count; ++i)
-            {
-                AddEntry(objects[i]);
-            }
-        }
-
-        private void Refresh(Dictionary<string, Object> objects)
-        {
-            foreach(var pair in  objects)
-            {
-                AddEntry(pair.Value);
-            }
-        }
-
-        private void AddEntry(Object obj)
-        {
-            var name = obj.name;
-            if (Assets.TryGetValue(name, out var asset))
-            {
-                if (asset != null)
-                    Object.Destroy(asset);
-                Assets[name] = obj;
-            }
-            else
-            {
-                Assets.Add(name, obj);
-            }
         }
 
         public override string ToString()
@@ -88,9 +56,14 @@ namespace BundlesLoader.Service
             {
                 Object asset = null;
 
-                if (Assets.TryGetValue(name, out var elem))
+                for(int i = 0; i < Assets.Count; ++i)
                 {
-                    if (elem is T) asset = elem;
+                    var elem = Assets[i];
+                    if (elem is T && elem.name.Equals(name))
+                    {
+                        asset = elem;
+                        break;
+                    }
                 }
 
                 if (asset != null)
