@@ -17,15 +17,5 @@ namespace BundlesLoader.Service.Retrievers
                 await Task.Yield();
             }
         }
-
-        protected async Task<Object[]> LoadAssets(AssetBundle bundle)
-        {
-            var req = bundle.LoadAllAssetsAsync();
-            while (req.isDone)
-                await Task.Yield();
-
-            var assets = req.allAssets;
-            return assets;
-        }
     }
 }

@@ -39,12 +39,15 @@ namespace BundlesLoader
             var bundles = AssetsServiceLoader.AssetsService.Bundles;
             bool ret = false;
 
+            if (string.IsNullOrEmpty(name))
+                return ret;
+
             foreach (var bundle in bundles)
             {
                 var assets = bundle.Value.Assets;
-                if (assets != null)
+                if (assets != null && assets.Count > 0)
                 {
-                    var obj = assets.First();
+                    var obj = assets.First().Value;
                     if (obj is SpriteAtlas atl)
                         ret = CheckForSpriteInAtlas(name, atl);
                     else
@@ -58,13 +61,15 @@ namespace BundlesLoader
             return ret;
         }
 
-        private static bool CheckForTexture(string name, List<UnityEngine.Object> assets)
+        private static bool CheckForTexture(string name, Dictionary<string, Object> assets)
         {
             bool ret = false;
-            var asset = assets.Find(x => x.name.Equals(name));
 
-            if (asset != null)
-                ret = true;
+            if(assets.TryGetValue(name, out var asset))
+            {
+                if (asset != null) ret = true;
+            }
+
             return ret;
         }
 

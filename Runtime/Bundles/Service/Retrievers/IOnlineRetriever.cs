@@ -213,8 +213,7 @@ namespace BundlesLoader.Service.Retrievers
                     return new Tuple<string, Bundle>(name, null);
                 }
 
-                var res = await LoadAssets(bundle);
-                return new Tuple<string, Bundle>(name, new Bundle(res, name, hash));
+                return new Tuple<string, Bundle>(name, new Bundle(bundle, name, hash));
             }
         }
 

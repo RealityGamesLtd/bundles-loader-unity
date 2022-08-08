@@ -1,29 +1,32 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
+﻿using UnityEngine;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 namespace BundlesLoader.Service
 {
     public class Bundle
     {
-        public List<Object> Assets { get; private set; }
+        public System.Action<Bundle> OnAssetsChanged;
+
+        public Dictionary<string, Object> Assets { get; private set; }
+        public AssetBundle AssetBundle { get; private set; }
         public string Name { get; private set; }
         public string Hash { get; private set; }
-        public System.Action<Bundle> OnAssetsChanged { get; set; }
 
-        public Bundle(Object[] assets, string name, string hash)
+        public Bundle(AssetBundle bundle, string name, string hash)
         {
-            Assets = assets.ToList();
+            Assets = new Dictionary<string, Object>();
+            AssetBundle = bundle;
             Name = name;
             Hash = hash;
         }
 
-        public void Update(List<Object> objects, string hash)
+        public void Update(Bundle bundle)
         {
-            Assets = objects;
-            Hash = hash;
+            Hash = bundle.Hash;
+            Assets.Clear();
+            AssetBundle = bundle.AssetBundle;
 
             OnAssetsChanged?.Invoke(this);
         }
@@ -52,24 +55,21 @@ namespace BundlesLoader.Service
                 }
             }
 
+            if (Assets.TryGetValue(name, out var elem))
+            {
+                if (elem is T t)
+                    return t;
+            }
+
             if (!string.IsNullOrEmpty(name))
             {
-                Object asset = null;
-
-                for(int i = 0; i < Assets.Count; ++i)
+                var res = AssetBundle.LoadAsset<T>(assetName);
+                if (!Assets.ContainsKey(name))
                 {
-                    var elem = Assets[i];
-                    if (elem is T && elem.name.Equals(name))
-                    {
-                        asset = elem;
-                        break;
-                    }
+                    Assets.Add(name, res);
                 }
 
-                if (asset != null)
-                {
-                    return asset as T;
-                }
+                return res;
             }
 
             return null;
