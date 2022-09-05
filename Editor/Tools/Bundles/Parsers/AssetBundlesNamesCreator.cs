@@ -41,12 +41,12 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles.Parsers
                     };
 
                     basChild.Children.Add(currChild);
-                    if (names != null)
-                        currChild.Children.AddRange(names.Select(x => new Child() { Name = x, Children = null }));
+                    if (names != null) currChild.Children.AddRange(names.Select(x => new Child() { Name = x, Children = null }));
                 }
                 root.Names.Add(basChild);
             }
 
+            root.Names = root.Names.OrderBy(x => x.Name).ToList();
             string output = string.Empty;
 
             try
@@ -70,7 +70,7 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles.Parsers
                 var spriteAtlas = slctObj as SpriteAtlas;
                 var sprites = new Sprite[spriteAtlas.spriteCount];
                 spriteAtlas.GetSprites(sprites);
-                return sprites.Select(x => x.name.Replace("(Clone)", string.Empty)).ToArray();
+                return sprites.Select(x => x.name.Replace("(Clone)", string.Empty)).OrderBy(x=>x).ToArray();
             }
             else
             {
