@@ -48,6 +48,7 @@ namespace BundlesLoader.Bundles.Core
             if (IsValidPath(path) == false) return;
 
             Type = EntityType.ATLAS;
+            RootName = "Bundles";
             BundleName = bundleName;
             SpriteAtlasName = spriteAtlasName;
             AssetName = assetName;
@@ -81,6 +82,19 @@ namespace BundlesLoader.Bundles.Core
             RootName = splitString[0];
             BundleName = splitString[1];
             AssetName = splitString[2];
+            FullPath = path;
+        }
+
+        public AssetPathComponent(string bundleName, string assetName)
+        {
+            var path = $"Bundles/{bundleName}/{assetName}";
+
+            if (IsValidPath(path) == false) return;
+
+            Type = EntityType.STANDALONE;
+            RootName = "Bundles";
+            BundleName = bundleName;
+            AssetName = assetName;
             FullPath = path;
         }
 
