@@ -70,7 +70,11 @@ namespace BundlesLoader.EditorHelpers.Tools.Bundles
             EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
 
-            EditorGUILayout.PropertyField(selectedContainers, true);
+            for (int i = 0; i < selectedContainers.arraySize; i++)
+            {
+                SerializedProperty element = selectedContainers.GetArrayElementAtIndex(i);
+                EditorGUILayout.PropertyField(element, true);
+            }
 
             EditorGUILayout.EndScrollView();
             EditorGUILayout.EndHorizontal();
