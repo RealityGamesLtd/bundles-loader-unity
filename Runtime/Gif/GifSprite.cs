@@ -14,7 +14,7 @@ namespace BundlesLoader.Gif
         private int index;
         private float timer;
 
-        public bool IsPlaying -> isPlaying;
+        public bool IsPlaying => isPlaying;
 
         private void Awake()
         {
