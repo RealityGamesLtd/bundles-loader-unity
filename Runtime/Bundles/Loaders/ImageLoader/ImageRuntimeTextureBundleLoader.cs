@@ -25,8 +25,8 @@ namespace BundlesLoader.Bundles.Loaders.ImageLoader
 
             if(image.type == Image.Type.Sliced)
             {
-                image.pixelsPerUnitMultiplier = automaticMultiplier ? Mathf.Clamp(image.sprite.rect.height /
-                    Mathf.Clamp(rectTransform.rect.height, 1, rectTransform.rect.height), 0f, 3.5f) : 1f;
+                image.pixelsPerUnitMultiplier = automaticMultiplier ? Mathf.Clamp(image.sprite.rect.width /
+                    Mathf.Clamp(rectTransform.rect.width, 1, rectTransform.rect.width), 0f, 3.5f) : image.pixelsPerUnitMultiplier;
             }
         }
     }
